@@ -1,0 +1,16 @@
+[
+  { "Name": "Durin", "Rarity": 1, "Tags": ["Robot", "Support"] },
+  { "Name": "Lancet-2", "Rarity": 1, "Tags": ["Robot", "Medic"] },
+  { "Name": "Castle-3", "Rarity": 1, "Tags": ["Robot", "Defender"] },
+  { "Name": "THRM-EX", "Rarity": 1, "Tags": ["Robot", "Guard"] },
+  { "Name": "Kroos", "Rarity": 3, "Tags": ["Sniper", "Ranged", "DPS", "Starter"] },
+  { "Name": "Vigna", "Rarity": 3, "Tags": ["Guard", "Melee", "DPS", "Starter"] },
+  { "Name": "Rope", "Rarity": 3, "Tags": ["Specialist", "Melee", "Debuff", "Starter"] },
+  { "Name": "Cardigan", "Rarity": 4, "Tags": ["Guard", "Melee", "DPS", "Fast-Redeploy"] },
+  { "Name": "Sora", "Rarity": 4, "Tags": ["Supporter", "Ranged", "Debuff", "Crowd Control"] },
+  { "Name": "Gummy", "Rarity": 4, "Tags": ["Defender", "Melee", "Survival", "DP-Recovery"] },
+  { "Name": "Silence", "Rarity": 5, "Tags": ["Specialist", "Melee", "Debuff", "Crowd Control"] },
+  { "Name": "Angelina", "Rarity": 5, "Tags": ["Caster", "Ranged", "Crowd Control", "AoE", "Senior Operator"] },
+  { "Name": "SilverAsh", "Rarity": 6, "Tags": ["Guard", "Melee", "DPS", "AoE", "Debuff", "Top Operator"] },
+  { "Name": "Eyjafjalla", "Rarity": 6, "Tags": ["Caster", "Ranged", "AoE", "Nuker", "Top Operator"] }
+]

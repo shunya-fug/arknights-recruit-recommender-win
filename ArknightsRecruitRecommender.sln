@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{9A893271-4C46-41FD-8D6E-B000F92CCF97}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArknightsRecruitRecommender", "src\ArknightsRecruitRecommender\ArknightsRecruitRecommender.csproj", "{4B893ECB-6F1D-4EBF-8D0F-CCB8AD7B8C7D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{EB7B611A-9DAE-41ED-9550-5D1140495472}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArknightsRecruitRecommender.Tests", "tests\ArknightsRecruitRecommender.Tests\ArknightsRecruitRecommender.Tests.csproj", "{33FB232A-9B8E-4289-9709-1ADC9FF18F34}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4B893ECB-6F1D-4EBF-8D0F-CCB8AD7B8C7D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4B893ECB-6F1D-4EBF-8D0F-CCB8AD7B8C7D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4B893ECB-6F1D-4EBF-8D0F-CCB8AD7B8C7D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4B893ECB-6F1D-4EBF-8D0F-CCB8AD7B8C7D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{33FB232A-9B8E-4289-9709-1ADC9FF18F34}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{33FB232A-9B8E-4289-9709-1ADC9FF18F34}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{33FB232A-9B8E-4289-9709-1ADC9FF18F34}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{33FB232A-9B8E-4289-9709-1ADC9FF18F34}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{4B893ECB-6F1D-4EBF-8D0F-CCB8AD7B8C7D} = {9A893271-4C46-41FD-8D6E-B000F92CCF97}
+		{33FB232A-9B8E-4289-9709-1ADC9FF18F34} = {EB7B611A-9DAE-41ED-9550-5D1140495472}
+	EndGlobalSection
+EndGlobal
