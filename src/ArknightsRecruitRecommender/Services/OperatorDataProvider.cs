@@ -8,10 +8,10 @@ public sealed class OperatorDataProvider
 {
     private readonly string _dataFilePath;
 
-    public OperatorDataProvider(string? dataFilePath = null)
+    public OperatorDataProvider(string? dataFilePath = null, string locale = "ja-JP")
     {
         _dataFilePath = dataFilePath
-            ?? Path.Combine(AppContext.BaseDirectory, "Data", "operators.json");
+            ?? Path.Combine(AppContext.BaseDirectory, "Data", $"operators.{locale}.json");
     }
 
     public IReadOnlyList<OperatorInfo> Load()

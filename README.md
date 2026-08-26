@@ -58,7 +58,7 @@ src/ArknightsRecruitRecommender/
     RecruitmentAnalyzer.cs   タグ組み合わせ（1〜3個）ごとの確定レアリティ判定ロジック
     RecruitmentMonitorService.cs  上記を束ねるポーリングループ
     OperatorDataProvider.cs  オペレーター/タグデータの読み込み
-  Data/operators.json        オペレーター/タグデータ（★要更新。下記参照）
+  Data/operators.ja-JP.json  オペレーター/タグデータ（日本版実データ。下記参照）
   Views/NotificationWindow.xaml(.cs)  画面隅の常時最前面通知ウィンドウ
 tests/ArknightsRecruitRecommender.Tests/
   RecruitmentAnalyzerTests.cs  組み合わせ判定ロジックの単体テスト
@@ -79,10 +79,32 @@ Release配布ビルド（GitHub Releasesで配る自己完結exe）では書き�
 
 ## ⚠️ 既知の制約・要検証事項
 
-1. **`Data/operators.json` はサンプルデータです。** 実際のゲームの全オペレーター・全タグを反映していません。
-   実運用前に、[Kengxxiao/ArknightsGameData](https://github.com/Kengxxiao/ArknightsGameData) 等の
-   公開データセットから `Name` / `Rarity` / `Tags` の形に変換して差し替える必要があります
-   （フィールド名は本リポジトリの `Models/OperatorInfo.cs` に合わせる）。
+1. **`Data/operators.ja-JP.json` は日本版(Yostar)の実データ（156件）です。**
+   `gacha_table.json`の`recruitDetail`フィールド（ゲーム内の「募集可能一覧」表示に使われている、
+   レア度ごとに区切られたテキスト。これが公開求人プールの唯一の正確な一次情報源）から名簿を機械的に
+   抽出し、`character_table.json`（職業・位置・特性タグ、`profession`/`position`/`tagList`）と
+   `gachaTags`/`specialTagRarityTable`（★5=「エリート」、★6=「上級エリート」の特別タグ）を
+   突き合わせて生成した。人材募集で入手可能なオペレーター全員ではなく、運営が求人プールに個別登録
+   した閉じた名簿であるため、`character_table.json`の`itemObtainApproach`だけからは機械的に
+   判定できない（この条件だけだと290件ヒットし、実際の3倍近くになる）。
+   データソースは[Kengxxiao/ArknightsGameData_YoStar](https://github.com/Kengxxiao/ArknightsGameData_YoStar)
+   ではない（2025年11月13日を最後に更新が止まっているため）。代わりに
+   [ArknightsAssets/ArknightsGamedata](https://github.com/ArknightsAssets/ArknightsGamedata)
+   （CN/EN/JP/KR/TW/biliの全リージョンを1リポジトリで自動取得・継続更新しているプロジェクト。
+   2026年8月時点で日次〜週次更新が確認できる）の`jp/gamedata/excel/`配下を使用している。
+   本国(CN)版データ（`cn/gamedata/excel/`）も同じリポジトリ内にあり同様に現役更新されているので、
+   仮にJP側が将来止まった場合はCN版の`recruitDetail`とキャラクターIDで日本語版
+   `character_table.json`を突き合わせる形を代替に検討すること。
+   「ア」（6★特殊タイプ、遠距離、支援/火力タグ）は一文字だが実在するオペレーター名（データ誤りではない）。
+   「カーディ」（★3、重装タイプ、近距離、防御）はCN/JP双方の`recruitDetail`（現在・過去とも）に
+   一度も登場しておらず、公開求人プール対象外と判断して含めていない（一部サイトの掲載は誤りと判断）。
+   [アークナイツ攻略Wiki](https://arknights.wikiru.jp/?%E5%85%AC%E9%96%8B%E6%B1%82%E4%BA%BA)
+   （コミュニティによる継続更新、2026/07/28更新）の★6一覧33名と本データの★6一覧33名が完全一致する
+   ことを確認済み。また同wikiに明記されている「公開求人対象外（中堅スカウト限定）」の6名
+   （アンジェリーナ、エイヤフィヤトラ、スカイフレア、ソラ、フランカ、ラップランド）が本データに
+   含まれていないことも確認済み。
+   `OperatorDataProvider`は`locale`引数（既定`ja-JP`）で`Data/operators.{locale}.json`を読むため、
+   将来的に他言語版（例: `en-US`）を追加する場合は同じ形式のファイルを追加するだけでよい。
 2. **`Interop/GraphicsCaptureInterop.cs` はこのプロジェクトの中で最もバージョン依存が強い部分です。**
    .NET SDKやWindows SDKのアップデートでCsWinRTの相互運用の挙動が変わった場合、ここが壊れる可能性が
    最も高いので、動作しなくなったらまずここを疑うこと。
