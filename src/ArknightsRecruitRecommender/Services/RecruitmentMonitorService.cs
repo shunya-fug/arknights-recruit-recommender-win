@@ -7,13 +7,17 @@ public sealed class RecruitmentMonitorService : IDisposable
 {
     private const string GameWindowTitleHint = "Arknights";
     private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(1);
-    private static readonly TimeSpan FirstFrameTimeout = TimeSpan.FromSeconds(2);
+    private static readonly TimeSpan FirstFrameTimeout = TimeSpan.FromMilliseconds(500);
 
     private readonly WindowCaptureService _captureService = new();
     private readonly TagOcrService _ocrService = new();
     private readonly RecruitmentAnalyzer _analyzer = new();
     private readonly IReadOnlyList<OperatorInfo> _operators;
     private readonly IReadOnlyList<string> _knownTags;
+
+    // _captureServiceは内部で可変状態(セッション)を持ちスレッドセーフではないため、常時監視の
+    // タイマーコールバックと手動チェック実行の両方から同時に呼ばれないようこのゲートで直列化する。
+    private readonly SemaphoreSlim _checkGate = new(1, 1);
 
     private readonly System.Threading.Timer _timer;
     private IReadOnlyList<string>? _lastVisibleTags;
@@ -28,17 +32,34 @@ public sealed class RecruitmentMonitorService : IDisposable
     }
 
     /// <summary>
-    /// Runs one capture -> OCR -> tag match -> combination analysis pass and returns every
-    /// intermediate result. Used both by the background poll timer and by the tray "手動チェック実行"
-    /// menu action for on-demand, manual verification against a real running game.
-    ///
-    /// The game's window is (re)detected on every call: if found, the capture session is started
-    /// (or, if already running for this window, reused - this is what makes frequent polling
-    /// cheap); if not found, any previously running session is torn down, so GPU resources are
-    /// released as soon as the game closes.
+    /// キャプチャ→OCR→タグ照合→組み合わせ判定を1回分実行し、途中経過も含めた結果を返す。
+    /// 常時監視のポーリングタイマーと、トレイメニュー「手動チェック実行」による手動実行の
+    /// 両方から呼ばれる。呼び出しは<see cref="_checkGate"/>で直列化しているため、両者が
+    /// 同時に発生しても<see cref="_captureService"/>の内部状態が競合することはない。
     /// </summary>
-    /// <returns>Null if the game window could not be found, or no frame could be captured.</returns>
+    /// <returns>ゲームウィンドウが見つからない、またはフレームを取得できなかった場合はnull。</returns>
     public async Task<RecruitmentCheckResult?> CheckOnceAsync()
+    {
+        await _checkGate.WaitAsync();
+        try
+        {
+            return await CheckOnceCoreAsync();
+        }
+        finally
+        {
+            _checkGate.Release();
+        }
+    }
+
+    /// <summary>
+    /// 実際のキャプチャ→OCR→判定処理本体。<see cref="_checkGate"/>を確保した状態でのみ
+    /// 呼び出すこと（<see cref="_captureService"/>がスレッドセーフでないため）。
+    ///
+    /// ゲームウィンドウは呼び出しのたびに再検出する。見つかればキャプチャセッションを開始
+    /// （同じウィンドウで起動済みならそのまま使い回す。これが高頻度ポーリングを安く保つ理由）、
+    /// 見つからなければセッションを破棄し、ゲーム終了直後にGPUリソースを解放する。
+    /// </summary>
+    private async Task<RecruitmentCheckResult?> CheckOnceCoreAsync()
     {
         var hwnd = WindowCaptureService.FindWindowByTitle(GameWindowTitleHint);
         if (hwnd is null)
@@ -63,8 +84,9 @@ public sealed class RecruitmentMonitorService : IDisposable
     }
 
     /// <summary>
-    /// A freshly (re)started capture session has not produced a frame yet, so poll briefly for
-    /// the first one rather than reporting failure immediately.
+    /// セッションを開始した直後はまだ1枚もフレームが届いていないことがあるため、即座に失敗と
+    /// せず短時間だけ再試行する。FirstFrameTimeoutはPollIntervalより十分短く保ち、1回の
+    /// チェックがポーリング間隔をまたいで次のティックと重ならないようにしている。
     /// </summary>
     private async Task<BitmapSource?> CaptureFirstAvailableFrameAsync()
     {
@@ -85,9 +107,16 @@ public sealed class RecruitmentMonitorService : IDisposable
 
     private async Task TickAsync()
     {
+        // 前回分のチェックがまだ実行中なら、キューイングして積み上げるのではずスキップする
+        // (どのみち直後にまた1秒後のティックが来るため、待ち行列を作る意味が薄い)。
+        if (!await _checkGate.WaitAsync(0))
+        {
+            return;
+        }
+
         try
         {
-            var result = await CheckOnceAsync();
+            var result = await CheckOnceCoreAsync();
             if (result is null || result.MatchedTags.Count == 0)
             {
                 return;
@@ -112,11 +141,16 @@ public sealed class RecruitmentMonitorService : IDisposable
             // A single failed capture/OCR cycle (e.g. window minimized, game not on the
             // recruitment screen) should not crash the background monitor - just skip this tick.
         }
+        finally
+        {
+            _checkGate.Release();
+        }
     }
 
     public void Dispose()
     {
         _timer.Dispose();
         _captureService.Dispose();
+        _checkGate.Dispose();
     }
 }

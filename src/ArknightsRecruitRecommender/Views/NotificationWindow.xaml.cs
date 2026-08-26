@@ -32,9 +32,8 @@ public partial class NotificationWindow : Window
     }
 
     /// <summary>
-    /// Manual check entry point (tray menu "手動チェック実行"): shows every detected tag and
-    /// combination, not just the recommended ones, so the pipeline's behavior is visible even
-    /// when nothing good was found.
+    /// 手動チェック実行（トレイメニュー）用の表示。おすすめ組み合わせだけでなく検出タグ・
+    /// 全組み合わせを表示し、何も良い結果が無い場合でも処理の挙動が分かるようにしている。
     /// </summary>
     public void ShowDebugResult(RecruitmentCheckResult result)
     {

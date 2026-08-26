@@ -49,10 +49,10 @@ public partial class App : Application
     }
 
     /// <summary>
-    /// Manual, on-demand capture -> OCR -> analysis pass triggered from the tray menu. Always
-    /// available regardless of how the app was launched. Unlike the background poll timer, this
-    /// always shows a result (even "no tags detected"). Debug-build限定でキャプチャ画像とOCR結果を
-    /// disk-output/に書き出す(Release配布ビルドでは通常ユーザーの環境に余計なファイルを残さない)。
+    /// トレイメニューから呼ばれる、手動・単発のキャプチャ→OCR→判定処理。起動方法によらず常に
+    /// 利用可能。常時監視のポーリングと異なり、結果が無い場合（タグ未検出）も含めて必ず表示する。
+    /// Debugビルド限定でキャプチャ画像とOCR結果をdebug-output/に書き出す
+    /// （Release配布ビルドでは通常ユーザーの環境に余計なファイルを残さない）。
     /// </summary>
     private async Task RunManualCheckAsync()
     {

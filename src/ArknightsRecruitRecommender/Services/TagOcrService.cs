@@ -4,7 +4,6 @@ using Windows.Globalization;
 using Windows.Media.Ocr;
 using Windows.Storage.Streams;
 using WicBitmapDecoder = Windows.Graphics.Imaging.BitmapDecoder;
-using WpfBitmapFrame = System.Windows.Media.Imaging.BitmapFrame;
 
 namespace ArknightsRecruitRecommender.Services;
 
@@ -53,11 +52,8 @@ public sealed class TagOcrService
 
     private static async Task<Windows.Graphics.Imaging.SoftwareBitmap> ConvertToSoftwareBitmapAsync(BitmapSource source)
     {
-        var encoder = new PngBitmapEncoder();
-        encoder.Frames.Add(WpfBitmapFrame.Create(source));
-
         using var stream = new MemoryStream();
-        encoder.Save(stream);
+        BitmapPngCodec.Encode(source, stream);
         stream.Position = 0;
 
         using var randomAccessStream = new InMemoryRandomAccessStream();
