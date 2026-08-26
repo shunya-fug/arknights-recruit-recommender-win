@@ -93,10 +93,25 @@ public static class OperatorDatasetBuilder
         // (「既知の職業タグに無いものは全部無視」にすると、将来本当に新しい職業が追加された時に
         // ReportsErrorForUnknownProfession相当のエラーで気付けなくなってしまうため)。
         // 除外してもなお同名で複数残る場合は、本当に判別不能なのでエラーとする(先頭要素を採用しない)。
-        var charactersByName = characters
+        var operatorCandidates = characters
             .Where(c => c is not null)
             .Where(c => !NonOperatorProfessions.Contains(c.Profession))
+            .ToList();
+
+        var charactersByName = operatorCandidates
             .GroupBy(c => c.Name)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        // character_table.jsonの一部リージョン(EN版で38件確認)では、名前が前後を単引用符で
+        // 囲われた形("'Justice Knight'")で格納されている一方、recruitDetailのテキスト上は
+        // 引用符無し("Justice Knight")で書かれている。これは完全一致(charactersByName)が
+        // 失敗した場合のフォールバックとしてのみ使う。全エントリを引用符除去したキーで
+        // まとめてしまうと、たまたま引用符無し版と引用符あり版の両方が存在する別々のエントリを
+        // 誤って同一名として衝突させ、本来一意に解決できたはずの名前まで「複数候補で判別不能」
+        // エラーにしてしまう恐れがあるため、引用符付きだったエントリだけを対象にする。
+        var charactersByStrippedName = operatorCandidates
+            .Where(c => StripSurroundingQuotes(c.Name) != c.Name)
+            .GroupBy(c => StripSurroundingQuotes(c.Name))
             .ToDictionary(g => g.Key, g => g.ToList());
 
         // レアリティ(0始まり)ごとの特別求人タグを specialTagRarityTable + gachaTags から解決する。
@@ -121,7 +136,8 @@ public static class OperatorDatasetBuilder
         {
             foreach (var name in names)
             {
-                if (!charactersByName.TryGetValue(name, out var candidates))
+                if (!charactersByName.TryGetValue(name, out var candidates) &&
+                    !charactersByStrippedName.TryGetValue(name, out candidates))
                 {
                     errors.Add($"「{name}」(recruitDetail上は★{tier})がcharacter_table.jsonに見つかりません。");
                     continue;
@@ -189,6 +205,11 @@ public static class OperatorDatasetBuilder
             Errors = errors,
         };
     }
+
+    private static string StripSurroundingQuotes(string name) =>
+        name.Length >= 2 && name.StartsWith('\'') && name.EndsWith('\'')
+            ? name[1..^1]
+            : name;
 
     /// <summary>
     /// enum値(例:"WARRIOR")→tagId→gachaTagsのタグ名、の2段階で解決する。

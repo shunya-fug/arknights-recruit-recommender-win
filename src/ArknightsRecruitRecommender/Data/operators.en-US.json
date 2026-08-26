@@ -1,0 +1,1607 @@
+[
+  {
+    "Name": "CONFESS-47",
+    "Rarity": 1,
+    "Tags": [
+      "Vanguard",
+      "Melee",
+      "Robot",
+      "Crowd-Control"
+    ]
+  },
+  {
+    "Name": "Castle-3",
+    "Rarity": 1,
+    "Tags": [
+      "Guard",
+      "Melee",
+      "Robot",
+      "Support"
+    ]
+  },
+  {
+    "Name": "Friston-3",
+    "Rarity": 1,
+    "Tags": [
+      "Defender",
+      "Melee",
+      "Robot",
+      "Defense"
+    ]
+  },
+  {
+    "Name": "Justice Knight",
+    "Rarity": 1,
+    "Tags": [
+      "Sniper",
+      "Ranged",
+      "Robot",
+      "Support"
+    ]
+  },
+  {
+    "Name": "Lancet-2",
+    "Rarity": 1,
+    "Tags": [
+      "Medic",
+      "Ranged",
+      "Robot",
+      "Healing"
+    ]
+  },
+  {
+    "Name": "PhonoR-0",
+    "Rarity": 1,
+    "Tags": [
+      "Supporter",
+      "Ranged",
+      "Robot",
+      "Elemental"
+    ]
+  },
+  {
+    "Name": "THRM-EX",
+    "Rarity": 1,
+    "Tags": [
+      "Specialist",
+      "Melee",
+      "Robot",
+      "Nuker"
+    ]
+  },
+  {
+    "Name": "12F",
+    "Rarity": 2,
+    "Tags": [
+      "Caster",
+      "Ranged",
+      "Starter"
+    ]
+  },
+  {
+    "Name": "Durin",
+    "Rarity": 2,
+    "Tags": [
+      "Caster",
+      "Ranged",
+      "Starter"
+    ]
+  },
+  {
+    "Name": "Noir Corne",
+    "Rarity": 2,
+    "Tags": [
+      "Defender",
+      "Melee",
+      "Starter"
+    ]
+  },
+  {
+    "Name": "Rangers",
+    "Rarity": 2,
+    "Tags": [
+      "Sniper",
+      "Ranged",
+      "Starter"
+    ]
+  },
+  {
+    "Name": "Yato",
+    "Rarity": 2,
+    "Tags": [
+      "Vanguard",
+      "Melee",
+      "Starter"
+    ]
+  },
+  {
+    "Name": "Adnachiel",
+    "Rarity": 3,
+    "Tags": [
+      "Sniper",
+      "Ranged",
+      "DPS"
+    ]
+  },
+  {
+    "Name": "Ansel",
+    "Rarity": 3,
+    "Tags": [
+      "Medic",
+      "Ranged",
+      "Healing"
+    ]
+  },
+  {
+    "Name": "Beagle",
+    "Rarity": 3,
+    "Tags": [
+      "Defender",
+      "Melee",
+      "Defense"
+    ]
+  },
+  {
+    "Name": "Catapult",
+    "Rarity": 3,
+    "Tags": [
+      "Sniper",
+      "Ranged",
+      "AoE"
+    ]
+  },
+  {
+    "Name": "Fang",
+    "Rarity": 3,
+    "Tags": [
+      "Vanguard",
+      "Melee",
+      "DP-Recovery"
+    ]
+  },
+  {
+    "Name": "Hibiscus",
+    "Rarity": 3,
+    "Tags": [
+      "Medic",
+      "Ranged",
+      "Healing"
+    ]
+  },
+  {
+    "Name": "Kroos",
+    "Rarity": 3,
+    "Tags": [
+      "Sniper",
+      "Ranged",
+      "DPS"
+    ]
+  },
+  {
+    "Name": "Lava",
+    "Rarity": 3,
+    "Tags": [
+      "Caster",
+      "Ranged",
+      "AoE"
+    ]
+  },
+  {
+    "Name": "Melantha",
+    "Rarity": 3,
+    "Tags": [
+      "Guard",
+      "Melee",
+      "DPS",
+      "Survival"
+    ]
+  },
+  {
+    "Name": "Midnight",
+    "Rarity": 3,
+    "Tags": [
+      "Guard",
+      "Melee",
+      "DPS"
+    ]
+  },
+  {
+    "Name": "Orchid",
+    "Rarity": 3,
+    "Tags": [
+      "Supporter",
+      "Ranged",
+      "Slow"
+    ]
+  },
+  {
+    "Name": "Plume",
+    "Rarity": 3,
+    "Tags": [
+      "Vanguard",
+      "Melee",
+      "DPS",
+      "DP-Recovery"
+    ]
+  },
+  {
+    "Name": "Popukar",
+    "Rarity": 3,
+    "Tags": [
+      "Guard",
+      "Melee",
+      "AoE",
+      "Survival"
+    ]
+  },
+  {
+    "Name": "Spot",
+    "Rarity": 3,
+    "Tags": [
+      "Defender",
+      "Melee",
+      "Defense",
+      "Healing"
+    ]
+  },
+  {
+    "Name": "Steward",
+    "Rarity": 3,
+    "Tags": [
+      "Caster",
+      "Ranged",
+      "DPS"
+    ]
+  },
+  {
+    "Name": "Vanilla",
+    "Rarity": 3,
+    "Tags": [
+      "Vanguard",
+      "Melee",
+      "DP-Recovery"
+    ]
+  },
+  {
+    "Name": "Aciddrop",
+    "Rarity": 4,
+    "Tags": [
+      "Sniper",
+      "Ranged",
+      "DPS"
+    ]
+  },
+  {
+    "Name": "Ambriel",
+    "Rarity": 4,
+    "Tags": [
+      "Sniper",
+      "Ranged",
+      "DPS",
+      "Slow"
+    ]
+  },
+  {
+    "Name": "Arene",
+    "Rarity": 4,
+    "Tags": [
+      "Guard",
+      "Melee",
+      "DPS"
+    ]
+  },
+  {
+    "Name": "Beanstalk",
+    "Rarity": 4,
+    "Tags": [
+      "Vanguard",
+      "Ranged",
+      "DP-Recovery",
+      "Summon"
+    ]
+  },
+  {
+    "Name": "Beehunter",
+    "Rarity": 4,
+    "Tags": [
+      "Guard",
+      "Melee",
+      "DPS"
+    ]
+  },
+  {
+    "Name": "Bubble",
+    "Rarity": 4,
+    "Tags": [
+      "Defender",
+      "Melee",
+      "Defense"
+    ]
+  },
+  {
+    "Name": "Click",
+    "Rarity": 4,
+    "Tags": [
+      "Caster",
+      "Ranged",
+      "DPS",
+      "Crowd-Control"
+    ]
+  },
+  {
+    "Name": "Cuora",
+    "Rarity": 4,
+    "Tags": [
+      "Defender",
+      "Melee",
+      "Defense"
+    ]
+  },
+  {
+    "Name": "Cutter",
+    "Rarity": 4,
+    "Tags": [
+      "Guard",
+      "Melee",
+      "Nuker",
+      "DPS"
+    ]
+  },
+  {
+    "Name": "Dobermann",
+    "Rarity": 4,
+    "Tags": [
+      "Guard",
+      "Melee",
+      "DPS",
+      "Support"
+    ]
+  },
+  {
+    "Name": "Earthspirit",
+    "Rarity": 4,
+    "Tags": [
+      "Supporter",
+      "Ranged",
+      "Slow"
+    ]
+  },
+  {
+    "Name": "Estelle",
+    "Rarity": 4,
+    "Tags": [
+      "Guard",
+      "Melee",
+      "AoE",
+      "Survival"
+    ]
+  },
+  {
+    "Name": "Frostleaf",
+    "Rarity": 4,
+    "Tags": [
+      "Guard",
+      "Melee",
+      "Slow",
+      "DPS"
+    ]
+  },
+  {
+    "Name": "Gitano",
+    "Rarity": 4,
+    "Tags": [
+      "Caster",
+      "Ranged",
+      "AoE"
+    ]
+  },
+  {
+    "Name": "Gravel",
+    "Rarity": 4,
+    "Tags": [
+      "Specialist",
+      "Melee",
+      "Fast-Redeploy",
+      "Defense"
+    ]
+  },
+  {
+    "Name": "Greyy",
+    "Rarity": 4,
+    "Tags": [
+      "Caster",
+      "Ranged",
+      "AoE",
+      "Slow"
+    ]
+  },
+  {
+    "Name": "Gummy",
+    "Rarity": 4,
+    "Tags": [
+      "Defender",
+      "Melee",
+      "Defense",
+      "Healing"
+    ]
+  },
+  {
+    "Name": "Haze",
+    "Rarity": 4,
+    "Tags": [
+      "Caster",
+      "Ranged",
+      "DPS",
+      "Debuff"
+    ]
+  },
+  {
+    "Name": "Indigo",
+    "Rarity": 4,
+    "Tags": [
+      "Caster",
+      "Ranged",
+      "DPS",
+      "Crowd-Control"
+    ]
+  },
+  {
+    "Name": "Jackie",
+    "Rarity": 4,
+    "Tags": [
+      "Guard",
+      "Melee",
+      "DPS"
+    ]
+  },
+  {
+    "Name": "Jaye",
+    "Rarity": 4,
+    "Tags": [
+      "Specialist",
+      "Melee",
+      "Fast-Redeploy",
+      "DPS"
+    ]
+  },
+  {
+    "Name": "Jessica",
+    "Rarity": 4,
+    "Tags": [
+      "Sniper",
+      "Ranged",
+      "DPS",
+      "Survival"
+    ]
+  },
+  {
+    "Name": "Matoimaru",
+    "Rarity": 4,
+    "Tags": [
+      "Guard",
+      "Melee",
+      "Survival",
+      "DPS"
+    ]
+  },
+  {
+    "Name": "Matterhorn",
+    "Rarity": 4,
+    "Tags": [
+      "Defender",
+      "Melee",
+      "Defense"
+    ]
+  },
+  {
+    "Name": "May",
+    "Rarity": 4,
+    "Tags": [
+      "Sniper",
+      "Ranged",
+      "DPS",
+      "Slow"
+    ]
+  },
+  {
+    "Name": "Meteor",
+    "Rarity": 4,
+    "Tags": [
+      "Sniper",
+      "Ranged",
+      "DPS",
+      "Debuff"
+    ]
+  },
+  {
+    "Name": "Mousse",
+    "Rarity": 4,
+    "Tags": [
+      "Guard",
+      "Melee",
+      "DPS"
+    ]
+  },
+  {
+    "Name": "Myrrh",
+    "Rarity": 4,
+    "Tags": [
+      "Medic",
+      "Ranged",
+      "Healing"
+    ]
+  },
+  {
+    "Name": "Myrtle",
+    "Rarity": 4,
+    "Tags": [
+      "Vanguard",
+      "Melee",
+      "DP-Recovery",
+      "Healing"
+    ]
+  },
+  {
+    "Name": "Perfumer",
+    "Rarity": 4,
+    "Tags": [
+      "Medic",
+      "Ranged",
+      "Healing"
+    ]
+  },
+  {
+    "Name": "Pinecone",
+    "Rarity": 4,
+    "Tags": [
+      "Sniper",
+      "Ranged",
+      "AoE",
+      "DPS"
+    ]
+  },
+  {
+    "Name": "Podenco",
+    "Rarity": 4,
+    "Tags": [
+      "Supporter",
+      "Ranged",
+      "Slow",
+      "Healing"
+    ]
+  },
+  {
+    "Name": "Purestream",
+    "Rarity": 4,
+    "Tags": [
+      "Medic",
+      "Ranged",
+      "Healing",
+      "Support"
+    ]
+  },
+  {
+    "Name": "Rope",
+    "Rarity": 4,
+    "Tags": [
+      "Specialist",
+      "Melee",
+      "Shift"
+    ]
+  },
+  {
+    "Name": "Scavenger",
+    "Rarity": 4,
+    "Tags": [
+      "Vanguard",
+      "Melee",
+      "DP-Recovery",
+      "DPS"
+    ]
+  },
+  {
+    "Name": "Shaw",
+    "Rarity": 4,
+    "Tags": [
+      "Specialist",
+      "Melee",
+      "Shift"
+    ]
+  },
+  {
+    "Name": "Shirayuki",
+    "Rarity": 4,
+    "Tags": [
+      "Sniper",
+      "Ranged",
+      "AoE",
+      "Slow"
+    ]
+  },
+  {
+    "Name": "Sussurro",
+    "Rarity": 4,
+    "Tags": [
+      "Medic",
+      "Ranged",
+      "Healing"
+    ]
+  },
+  {
+    "Name": "Utage",
+    "Rarity": 4,
+    "Tags": [
+      "Guard",
+      "Melee",
+      "DPS",
+      "Survival"
+    ]
+  },
+  {
+    "Name": "Vermeil",
+    "Rarity": 4,
+    "Tags": [
+      "Sniper",
+      "Ranged",
+      "DPS"
+    ]
+  },
+  {
+    "Name": "Vigna",
+    "Rarity": 4,
+    "Tags": [
+      "Vanguard",
+      "Melee",
+      "DPS",
+      "DP-Recovery"
+    ]
+  },
+  {
+    "Name": "Akafuyu",
+    "Rarity": 5,
+    "Tags": [
+      "Guard",
+      "Melee",
+      "Survival",
+      "DPS",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Andreana",
+    "Rarity": 5,
+    "Tags": [
+      "Sniper",
+      "Ranged",
+      "DPS",
+      "Slow",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Aosta",
+    "Rarity": 5,
+    "Tags": [
+      "Sniper",
+      "Ranged",
+      "AoE",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "April",
+    "Rarity": 5,
+    "Tags": [
+      "Sniper",
+      "Ranged",
+      "DPS",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Asbestos",
+    "Rarity": 5,
+    "Tags": [
+      "Defender",
+      "Melee",
+      "Defense",
+      "DPS",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Astesia",
+    "Rarity": 5,
+    "Tags": [
+      "Guard",
+      "Melee",
+      "DPS",
+      "Defense",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Ayerscarpe",
+    "Rarity": 5,
+    "Tags": [
+      "Guard",
+      "Melee",
+      "DPS",
+      "AoE",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Beeswax",
+    "Rarity": 5,
+    "Tags": [
+      "Caster",
+      "Ranged",
+      "AoE",
+      "Defense",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Blue Poison",
+    "Rarity": 5,
+    "Tags": [
+      "Sniper",
+      "Ranged",
+      "DPS",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Broca",
+    "Rarity": 5,
+    "Tags": [
+      "Guard",
+      "Melee",
+      "AoE",
+      "Survival",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Chiave",
+    "Rarity": 5,
+    "Tags": [
+      "Vanguard",
+      "Melee",
+      "DP-Recovery",
+      "DPS",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Cliffheart",
+    "Rarity": 5,
+    "Tags": [
+      "Specialist",
+      "Melee",
+      "Shift",
+      "DPS",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Croissant",
+    "Rarity": 5,
+    "Tags": [
+      "Defender",
+      "Melee",
+      "Defense",
+      "Shift",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Elysium",
+    "Rarity": 5,
+    "Tags": [
+      "Vanguard",
+      "Melee",
+      "DP-Recovery",
+      "Support",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Executor",
+    "Rarity": 5,
+    "Tags": [
+      "Sniper",
+      "Ranged",
+      "AoE",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "FEater",
+    "Rarity": 5,
+    "Tags": [
+      "Specialist",
+      "Melee",
+      "Shift",
+      "Slow",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Firewatch",
+    "Rarity": 5,
+    "Tags": [
+      "Sniper",
+      "Ranged",
+      "DPS",
+      "Nuker",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Flint",
+    "Rarity": 5,
+    "Tags": [
+      "Guard",
+      "Melee",
+      "DPS",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Glaucus",
+    "Rarity": 5,
+    "Tags": [
+      "Supporter",
+      "Ranged",
+      "Slow",
+      "Crowd-Control",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "GreyThroat",
+    "Rarity": 5,
+    "Tags": [
+      "Sniper",
+      "Ranged",
+      "DPS",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Hung",
+    "Rarity": 5,
+    "Tags": [
+      "Defender",
+      "Melee",
+      "Defense",
+      "Healing",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Indra",
+    "Rarity": 5,
+    "Tags": [
+      "Guard",
+      "Melee",
+      "DPS",
+      "Survival",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Iris",
+    "Rarity": 5,
+    "Tags": [
+      "Caster",
+      "Ranged",
+      "DPS",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Istina",
+    "Rarity": 5,
+    "Tags": [
+      "Supporter",
+      "Ranged",
+      "Slow",
+      "DPS",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Kafka",
+    "Rarity": 5,
+    "Tags": [
+      "Specialist",
+      "Melee",
+      "Fast-Redeploy",
+      "Crowd-Control",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Kirara",
+    "Rarity": 5,
+    "Tags": [
+      "Specialist",
+      "Melee",
+      "DPS",
+      "Survival",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Leizi",
+    "Rarity": 5,
+    "Tags": [
+      "Caster",
+      "Ranged",
+      "DPS",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Leonhardt",
+    "Rarity": 5,
+    "Tags": [
+      "Caster",
+      "Ranged",
+      "AoE",
+      "Nuker",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Liskarm",
+    "Rarity": 5,
+    "Tags": [
+      "Defender",
+      "Melee",
+      "Defense",
+      "DPS",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Manticore",
+    "Rarity": 5,
+    "Tags": [
+      "Specialist",
+      "Melee",
+      "DPS",
+      "Survival",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Mayer",
+    "Rarity": 5,
+    "Tags": [
+      "Supporter",
+      "Ranged",
+      "Summon",
+      "Crowd-Control",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Meteorite",
+    "Rarity": 5,
+    "Tags": [
+      "Sniper",
+      "Ranged",
+      "AoE",
+      "Debuff",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Mr. Nothing",
+    "Rarity": 5,
+    "Tags": [
+      "Specialist",
+      "Melee",
+      "Fast-Redeploy",
+      "DPS",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Nearl",
+    "Rarity": 5,
+    "Tags": [
+      "Defender",
+      "Melee",
+      "Defense",
+      "Healing",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Nightmare",
+    "Rarity": 5,
+    "Tags": [
+      "Caster",
+      "Ranged",
+      "DPS",
+      "Healing",
+      "Slow",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Platinum",
+    "Rarity": 5,
+    "Tags": [
+      "Sniper",
+      "Ranged",
+      "DPS",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Pramanix",
+    "Rarity": 5,
+    "Tags": [
+      "Supporter",
+      "Ranged",
+      "Debuff",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Projekt Red",
+    "Rarity": 5,
+    "Tags": [
+      "Specialist",
+      "Melee",
+      "Fast-Redeploy",
+      "Crowd-Control",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Provence",
+    "Rarity": 5,
+    "Tags": [
+      "Sniper",
+      "Ranged",
+      "DPS",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Ptilopsis",
+    "Rarity": 5,
+    "Tags": [
+      "Medic",
+      "Ranged",
+      "Healing",
+      "Support",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Reed",
+    "Rarity": 5,
+    "Tags": [
+      "Vanguard",
+      "Melee",
+      "DP-Recovery",
+      "DPS",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Sesa",
+    "Rarity": 5,
+    "Tags": [
+      "Sniper",
+      "Ranged",
+      "AoE",
+      "Debuff",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Shamare",
+    "Rarity": 5,
+    "Tags": [
+      "Supporter",
+      "Ranged",
+      "Debuff",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Silence",
+    "Rarity": 5,
+    "Tags": [
+      "Medic",
+      "Ranged",
+      "Healing",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Specter",
+    "Rarity": 5,
+    "Tags": [
+      "Guard",
+      "Melee",
+      "AoE",
+      "Survival",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Swire",
+    "Rarity": 5,
+    "Tags": [
+      "Guard",
+      "Melee",
+      "DPS",
+      "Support",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Texas",
+    "Rarity": 5,
+    "Tags": [
+      "Vanguard",
+      "Melee",
+      "DP-Recovery",
+      "Crowd-Control",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Toddifons",
+    "Rarity": 5,
+    "Tags": [
+      "Sniper",
+      "Ranged",
+      "DPS",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Tsukinogi",
+    "Rarity": 5,
+    "Tags": [
+      "Supporter",
+      "Ranged",
+      "Support",
+      "Survival",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Vulcan",
+    "Rarity": 5,
+    "Tags": [
+      "Defender",
+      "Melee",
+      "Survival",
+      "Defense",
+      "DPS",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Waai Fu",
+    "Rarity": 5,
+    "Tags": [
+      "Specialist",
+      "Melee",
+      "Fast-Redeploy",
+      "Debuff",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Warfarin",
+    "Rarity": 5,
+    "Tags": [
+      "Medic",
+      "Ranged",
+      "Healing",
+      "Support",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Whisperain",
+    "Rarity": 5,
+    "Tags": [
+      "Medic",
+      "Ranged",
+      "Healing",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Zima",
+    "Rarity": 5,
+    "Tags": [
+      "Vanguard",
+      "Melee",
+      "DP-Recovery",
+      "Support",
+      "Senior Operator"
+    ]
+  },
+  {
+    "Name": "Aak",
+    "Rarity": 6,
+    "Tags": [
+      "Specialist",
+      "Ranged",
+      "Support",
+      "DPS",
+      "Top Operator"
+    ]
+  },
+  {
+    "Name": "Archetto",
+    "Rarity": 6,
+    "Tags": [
+      "Sniper",
+      "Ranged",
+      "DPS",
+      "Top Operator"
+    ]
+  },
+  {
+    "Name": "Bagpipe",
+    "Rarity": 6,
+    "Tags": [
+      "Vanguard",
+      "Melee",
+      "DP-Recovery",
+      "DPS",
+      "Top Operator"
+    ]
+  },
+  {
+    "Name": "Blaze",
+    "Rarity": 6,
+    "Tags": [
+      "Guard",
+      "Melee",
+      "DPS",
+      "Survival",
+      "Top Operator"
+    ]
+  },
+  {
+    "Name": "Blemishine",
+    "Rarity": 6,
+    "Tags": [
+      "Defender",
+      "Melee",
+      "Defense",
+      "Healing",
+      "DPS",
+      "Top Operator"
+    ]
+  },
+  {
+    "Name": "Carnelian",
+    "Rarity": 6,
+    "Tags": [
+      "Caster",
+      "Ranged",
+      "AoE",
+      "Defense",
+      "Top Operator"
+    ]
+  },
+  {
+    "Name": "Ceobe",
+    "Rarity": 6,
+    "Tags": [
+      "Caster",
+      "Ranged",
+      "DPS",
+      "Crowd-Control",
+      "Top Operator"
+    ]
+  },
+  {
+    "Name": "Ch\u0027en",
+    "Rarity": 6,
+    "Tags": [
+      "Guard",
+      "Melee",
+      "Nuker",
+      "DPS",
+      "Top Operator"
+    ]
+  },
+  {
+    "Name": "Eunectes",
+    "Rarity": 6,
+    "Tags": [
+      "Defender",
+      "Melee",
+      "DPS",
+      "Survival",
+      "Defense",
+      "Top Operator"
+    ]
+  },
+  {
+    "Name": "Exusiai",
+    "Rarity": 6,
+    "Tags": [
+      "Sniper",
+      "Ranged",
+      "DPS",
+      "Top Operator"
+    ]
+  },
+  {
+    "Name": "Hellagur",
+    "Rarity": 6,
+    "Tags": [
+      "Guard",
+      "Melee",
+      "DPS",
+      "Survival",
+      "Top Operator"
+    ]
+  },
+  {
+    "Name": "Hoshiguma",
+    "Rarity": 6,
+    "Tags": [
+      "Defender",
+      "Melee",
+      "Defense",
+      "DPS",
+      "Top Operator"
+    ]
+  },
+  {
+    "Name": "Ifrit",
+    "Rarity": 6,
+    "Tags": [
+      "Caster",
+      "Ranged",
+      "AoE",
+      "Debuff",
+      "Top Operator"
+    ]
+  },
+  {
+    "Name": "Kal\u0027tsit",
+    "Rarity": 6,
+    "Tags": [
+      "Medic",
+      "Ranged",
+      "Summon",
+      "Healing",
+      "Top Operator"
+    ]
+  },
+  {
+    "Name": "Magallan",
+    "Rarity": 6,
+    "Tags": [
+      "Supporter",
+      "Ranged",
+      "Support",
+      "Slow",
+      "DPS",
+      "Top Operator"
+    ]
+  },
+  {
+    "Name": "Mostima",
+    "Rarity": 6,
+    "Tags": [
+      "Caster",
+      "Ranged",
+      "AoE",
+      "Support",
+      "Crowd-Control",
+      "Top Operator"
+    ]
+  },
+  {
+    "Name": "Mountain",
+    "Rarity": 6,
+    "Tags": [
+      "Guard",
+      "Melee",
+      "DPS",
+      "Survival",
+      "Top Operator"
+    ]
+  },
+  {
+    "Name": "Mudrock",
+    "Rarity": 6,
+    "Tags": [
+      "Defender",
+      "Melee",
+      "Survival",
+      "Defense",
+      "DPS",
+      "Top Operator"
+    ]
+  },
+  {
+    "Name": "Nightingale",
+    "Rarity": 6,
+    "Tags": [
+      "Medic",
+      "Ranged",
+      "Healing",
+      "Support",
+      "Top Operator"
+    ]
+  },
+  {
+    "Name": "Passenger",
+    "Rarity": 6,
+    "Tags": [
+      "Caster",
+      "Ranged",
+      "DPS",
+      "Top Operator"
+    ]
+  },
+  {
+    "Name": "Phantom",
+    "Rarity": 6,
+    "Tags": [
+      "Specialist",
+      "Melee",
+      "Fast-Redeploy",
+      "Crowd-Control",
+      "DPS",
+      "Top Operator"
+    ]
+  },
+  {
+    "Name": "Rosa",
+    "Rarity": 6,
+    "Tags": [
+      "Sniper",
+      "Ranged",
+      "DPS",
+      "Crowd-Control",
+      "Top Operator"
+    ]
+  },
+  {
+    "Name": "Saga",
+    "Rarity": 6,
+    "Tags": [
+      "Vanguard",
+      "Melee",
+      "DP-Recovery",
+      "DPS",
+      "Top Operator"
+    ]
+  },
+  {
+    "Name": "Saria",
+    "Rarity": 6,
+    "Tags": [
+      "Defender",
+      "Melee",
+      "Defense",
+      "Healing",
+      "Support",
+      "Top Operator"
+    ]
+  },
+  {
+    "Name": "Schwarz",
+    "Rarity": 6,
+    "Tags": [
+      "Sniper",
+      "Ranged",
+      "DPS",
+      "Top Operator"
+    ]
+  },
+  {
+    "Name": "Shining",
+    "Rarity": 6,
+    "Tags": [
+      "Medic",
+      "Ranged",
+      "Healing",
+      "Support",
+      "Top Operator"
+    ]
+  },
+  {
+    "Name": "Siege",
+    "Rarity": 6,
+    "Tags": [
+      "Vanguard",
+      "Melee",
+      "DP-Recovery",
+      "DPS",
+      "Top Operator"
+    ]
+  },
+  {
+    "Name": "SilverAsh",
+    "Rarity": 6,
+    "Tags": [
+      "Guard",
+      "Melee",
+      "DPS",
+      "Support",
+      "Top Operator"
+    ]
+  },
+  {
+    "Name": "Skadi",
+    "Rarity": 6,
+    "Tags": [
+      "Guard",
+      "Melee",
+      "DPS",
+      "Survival",
+      "Top Operator"
+    ]
+  },
+  {
+    "Name": "Surtr",
+    "Rarity": 6,
+    "Tags": [
+      "Guard",
+      "Melee",
+      "DPS",
+      "Top Operator"
+    ]
+  },
+  {
+    "Name": "Suzuran",
+    "Rarity": 6,
+    "Tags": [
+      "Supporter",
+      "Ranged",
+      "Slow",
+      "Support",
+      "DPS",
+      "Top Operator"
+    ]
+  },
+  {
+    "Name": "Thorns",
+    "Rarity": 6,
+    "Tags": [
+      "Guard",
+      "Melee",
+      "DPS",
+      "Defense",
+      "Top Operator"
+    ]
+  },
+  {
+    "Name": "Weedy",
+    "Rarity": 6,
+    "Tags": [
+      "Specialist",
+      "Melee",
+      "Shift",
+      "DPS",
+      "Crowd-Control",
+      "Top Operator"
+    ]
+  }
+]

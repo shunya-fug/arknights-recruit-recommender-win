@@ -102,6 +102,7 @@ GitHub Actions (`.github/workflows/update-operator-data.yml`) が毎日9:00(JST)
 タスクトレイメニューの「言語」から、使用する言語（ロケール）を選択できる。選択肢は
 `Data/operators.{ロケール}.json`という命名のファイルが`Data`フォルダに存在するかどうかから
 動的に決まるため、新しい言語のデータファイルを追加するだけで選択肢に増える（コード変更不要）。
+現在は日本版(`ja-JP`)とグローバル版(`en-US`)の2言語に対応している。
 
 選択した言語は`OperatorDataProvider`（読み込むオペレーターデータ）と`TagOcrService`（OCR時に
 要求する言語）の両方に連動する。ゲームの表示言語とOSの言語設定は必ずしも一致しないため、OSの
@@ -145,6 +146,11 @@ Release配布ビルド（GitHub Releasesで配る自己完結exe）では書き�
    本国(CN)版データ（`cn/gamedata/excel/`）も同じリポジトリ内にあり同様に現役更新されているので、
    仮にJP側が将来止まった場合はCN版の`recruitDetail`とキャラクターIDで日本語版
    `character_table.json`を突き合わせる形を代替に検討すること。
+   `Data/operators.en-US.json`（グローバル版、同じく156件）も同じツールを
+   `--gacha-source`/`--character-source`をEN版のURLに差し替えて生成したもの。生成時に
+   character_table.json側の名前が前後を単引用符で囲われている（例:`'Justice Knight'`。
+   EN版で38件確認）ケースが見つかり、`recruitDetail`側は引用符無しのため突き合わせに失敗する
+   問題があったので、`OperatorDatasetBuilder`で単引用符を正規化してから照合するよう対応済み。
    「ア」（6★特殊タイプ、遠距離、支援/火力タグ）は一文字だが実在するオペレーター名（データ誤りではない）。
    「カーディ」（★3、重装タイプ、近距離、防御）はCN/JP双方の`recruitDetail`（現在・過去とも）に
    一度も登場しておらず、公開求人プール対象外と判断して含めていない（一部サイトの掲載は誤りと判断）。

@@ -230,6 +230,22 @@ public class OperatorDatasetBuilderTests
     }
 
     [Fact]
+    public void MatchesCharacterTableEntryWhoseNameIsWrappedInQuotes()
+    {
+        // 実際に観測されたケース(EN版): character_table.json上は "'Justice Knight'" のように
+        // 前後を単引用符で囲われているが、recruitDetail上は引用符無しの "Justice Knight"。
+        var tiers = TiersWithOverride(1, "Justice Knight");
+        var characters = CharactersWithFillers(
+            new CharacterTableEntry { Name = "'Justice Knight'", Rarity = "TIER_1", Profession = "SNIPER", Position = "RANGED", TagList = new List<string> { "Robot", "Support" } });
+
+        var result = OperatorDatasetBuilder.Build(tiers, characters, SampleGachaData());
+
+        Assert.True(result.Success, string.Join(", ", result.Errors));
+        var op = result.Operators.Single(o => o.Name == "Justice Knight");
+        Assert.Equal(1, op.Rarity);
+    }
+
+    [Fact]
     public void IgnoresTrapEntriesThatShareAnOperatorsDisplayName()
     {
         // 実際に観測されたケース: オペレーター本体と、そのスキルで召喚される罠オブジェクトが
