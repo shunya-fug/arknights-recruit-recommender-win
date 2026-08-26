@@ -15,7 +15,8 @@
             CornerRadius="8"
             Padding="14,10">
         <StackPanel MinWidth="260" MaxWidth="360">
-            <TextBlock Text="★4以上 確定タグの組み合わせ"
+            <TextBlock x:Name="TitleText"
+                       Text="★4以上 確定タグの組み合わせ"
                        Foreground="#FF4FC3F7"
                        FontWeight="Bold"
                        FontSize="13"

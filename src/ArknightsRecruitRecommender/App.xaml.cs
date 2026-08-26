@@ -1,4 +1,5 @@
 using System.Drawing;
+using System.IO;
 using System.Windows;
 using ArknightsRecruitRecommender.Services;
 using ArknightsRecruitRecommender.Views;
@@ -23,6 +24,8 @@ public partial class App : Application
 
         _notificationWindow = new NotificationWindow();
 
+        // 常時監視は常に動作する。「手動チェック実行」メニューはそれとは独立して、いつでも手動で
+        // 1回分のチェックを実行し、結果をdebug-output/に書き出すための機能。
         _monitor = new RecruitmentMonitorService(new OperatorDataProvider());
         _monitor.GoodCombinationsFound += results =>
             Dispatcher.Invoke(() => _notificationWindow.ShowResults(results));
@@ -32,11 +35,61 @@ public partial class App : Application
     {
         var menu = new System.Windows.Controls.ContextMenu();
 
+        var manualCheckItem = new System.Windows.Controls.MenuItem { Header = "手動チェック実行" };
+        manualCheckItem.Click += async (_, _) => await RunManualCheckAsync();
+        menu.Items.Add(manualCheckItem);
+
+        menu.Items.Add(new System.Windows.Controls.Separator());
+
         var exitItem = new System.Windows.Controls.MenuItem { Header = "終了" };
         exitItem.Click += (_, _) => Shutdown();
         menu.Items.Add(exitItem);
 
         return menu;
+    }
+
+    /// <summary>
+    /// Manual, on-demand capture -> OCR -> analysis pass triggered from the tray menu. Always
+    /// available regardless of how the app was launched. Unlike the background poll timer, this
+    /// always shows a result (even "no tags detected"). Debug-build限定でキャプチャ画像とOCR結果を
+    /// disk-output/に書き出す(Release配布ビルドでは通常ユーザーの環境に余計なファイルを残さない)。
+    /// </summary>
+    private async Task RunManualCheckAsync()
+    {
+        if (_monitor is null || _notificationWindow is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var result = await _monitor.CheckOnceAsync();
+            if (result is null)
+            {
+                MessageBox.Show(
+                    "アークナイツの画面を取得できませんでした。ゲームが起動しているか、" +
+                    "ウィンドウが最小化されていないか確認してください。",
+                    "手動チェック実行",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+                return;
+            }
+
+#if DEBUG
+            var outputDirectory = Path.Combine(AppContext.BaseDirectory, "debug-output");
+            DebugArtifactWriter.Write(result, outputDirectory);
+#endif
+
+            _notificationWindow.ShowDebugResult(result);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                $"手動チェック実行中にエラーが発生しました:\n{ex}",
+                "手動チェック実行",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
     }
 
     /// <summary>

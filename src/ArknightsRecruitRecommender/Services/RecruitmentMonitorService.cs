@@ -25,36 +25,47 @@ public sealed class RecruitmentMonitorService : IDisposable
         _timer = new System.Threading.Timer(_ => _ = TickAsync(), null, TimeSpan.Zero, PollInterval);
     }
 
+    /// <summary>
+    /// Runs one capture -> OCR -> tag match -> combination analysis pass and returns every
+    /// intermediate result. Used both by the background poll timer and by the tray "手動チェック実行"
+    /// menu action for on-demand, manual verification against a real running game.
+    /// </summary>
+    /// <returns>Null if the game window could not be found.</returns>
+    public async Task<RecruitmentCheckResult?> CheckOnceAsync()
+    {
+        var hwnd = WindowCaptureService.FindWindowByTitle(GameWindowTitleHint);
+        if (hwnd is null)
+        {
+            return null;
+        }
+
+        var frame = await _captureService.CaptureFrameAsync(hwnd.Value);
+        var detected = await _ocrService.RecognizeAsync(frame);
+        var visibleTags = TagMatcher.MatchKnownTags(detected, _knownTags);
+        var combinations = _analyzer.Evaluate(visibleTags, _operators);
+
+        return new RecruitmentCheckResult(frame, detected, visibleTags, combinations);
+    }
+
     private async Task TickAsync()
     {
         try
         {
-            var hwnd = WindowCaptureService.FindWindowByTitle(GameWindowTitleHint);
-            if (hwnd is null)
-            {
-                return;
-            }
-
-            var frame = await _captureService.CaptureFrameAsync(hwnd.Value);
-            var detected = await _ocrService.RecognizeAsync(frame);
-            var visibleTags = TagMatcher.MatchKnownTags(detected, _knownTags);
-
-            if (visibleTags.Count == 0)
+            var result = await CheckOnceAsync();
+            if (result is null || result.MatchedTags.Count == 0)
             {
                 return;
             }
 
             // Avoid re-notifying for the same tag set every poll cycle.
-            if (_lastVisibleTags is not null && _lastVisibleTags.SequenceEqual(visibleTags))
+            if (_lastVisibleTags is not null && _lastVisibleTags.SequenceEqual(result.MatchedTags))
             {
                 return;
             }
 
-            _lastVisibleTags = visibleTags;
+            _lastVisibleTags = result.MatchedTags;
 
-            var results = _analyzer.Evaluate(visibleTags, _operators);
-            var goodCombinations = results.Where(r => r.IsRecommended).ToList();
-
+            var goodCombinations = result.Combinations.Where(r => r.IsRecommended).ToList();
             if (goodCombinations.Count > 0)
             {
                 GoodCombinationsFound?.Invoke(goodCombinations);

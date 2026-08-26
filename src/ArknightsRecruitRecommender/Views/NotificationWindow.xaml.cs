@@ -26,9 +26,40 @@ public partial class NotificationWindow : Window
 
     public void ShowResults(IReadOnlyList<CombinationResult> results)
     {
-        ResultsList.ItemsSource = results.Select(r =>
-            $"[{r.Tags.Aggregate((a, b) => $"{a} / {b}")}] -> {r.GuaranteedMinRarity}★以上確定 ({r.MatchingOperators.Count}件)");
+        TitleText.Text = "★4以上 確定タグの組み合わせ";
+        ResultsList.ItemsSource = results.Select(FormatCombination);
+        Display();
+    }
 
+    /// <summary>
+    /// Manual check entry point (tray menu "手動チェック実行"): shows every detected tag and
+    /// combination, not just the recommended ones, so the pipeline's behavior is visible even
+    /// when nothing good was found.
+    /// </summary>
+    public void ShowDebugResult(RecruitmentCheckResult result)
+    {
+        TitleText.Text = "手動チェック結果";
+
+        var lines = new List<string>
+        {
+            result.MatchedTags.Count == 0
+                ? "検出タグ: (一致なし)"
+                : $"検出タグ: {string.Join(" / ", result.MatchedTags)}",
+        };
+        lines.AddRange(result.Combinations.Select(FormatCombination));
+
+        ResultsList.ItemsSource = lines;
+        Display();
+    }
+
+    private static string FormatCombination(CombinationResult r)
+    {
+        var marker = r.IsRecommended ? "[おすすめ] " : "";
+        return $"{marker}[{string.Join(" / ", r.Tags)}] -> {r.GuaranteedMinRarity}★以上確定 ({r.MatchingOperators.Count}件)";
+    }
+
+    private void Display()
+    {
         Show();
         _autoHideTimer.Stop();
         _autoHideTimer.Start();
