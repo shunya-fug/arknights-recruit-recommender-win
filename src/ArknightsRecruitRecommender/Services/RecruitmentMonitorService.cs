@@ -1,3 +1,4 @@
+using System.Windows.Media.Imaging;
 using ArknightsRecruitRecommender.Models;
 
 namespace ArknightsRecruitRecommender.Services;
@@ -5,7 +6,8 @@ namespace ArknightsRecruitRecommender.Services;
 public sealed class RecruitmentMonitorService : IDisposable
 {
     private const string GameWindowTitleHint = "Arknights";
-    private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(3);
+    private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(1);
+    private static readonly TimeSpan FirstFrameTimeout = TimeSpan.FromSeconds(2);
 
     private readonly WindowCaptureService _captureService = new();
     private readonly TagOcrService _ocrService = new();
@@ -29,22 +31,56 @@ public sealed class RecruitmentMonitorService : IDisposable
     /// Runs one capture -> OCR -> tag match -> combination analysis pass and returns every
     /// intermediate result. Used both by the background poll timer and by the tray "手動チェック実行"
     /// menu action for on-demand, manual verification against a real running game.
+    ///
+    /// The game's window is (re)detected on every call: if found, the capture session is started
+    /// (or, if already running for this window, reused - this is what makes frequent polling
+    /// cheap); if not found, any previously running session is torn down, so GPU resources are
+    /// released as soon as the game closes.
     /// </summary>
-    /// <returns>Null if the game window could not be found.</returns>
+    /// <returns>Null if the game window could not be found, or no frame could be captured.</returns>
     public async Task<RecruitmentCheckResult?> CheckOnceAsync()
     {
         var hwnd = WindowCaptureService.FindWindowByTitle(GameWindowTitleHint);
         if (hwnd is null)
         {
+            _captureService.StopSession();
             return null;
         }
 
-        var frame = await _captureService.CaptureFrameAsync(hwnd.Value);
+        _captureService.EnsureSessionStarted(hwnd.Value);
+
+        var frame = await CaptureFirstAvailableFrameAsync();
+        if (frame is null)
+        {
+            return null;
+        }
+
         var detected = await _ocrService.RecognizeAsync(frame);
         var visibleTags = TagMatcher.MatchKnownTags(detected, _knownTags);
         var combinations = _analyzer.Evaluate(visibleTags, _operators);
 
         return new RecruitmentCheckResult(frame, detected, visibleTags, combinations);
+    }
+
+    /// <summary>
+    /// A freshly (re)started capture session has not produced a frame yet, so poll briefly for
+    /// the first one rather than reporting failure immediately.
+    /// </summary>
+    private async Task<BitmapSource?> CaptureFirstAvailableFrameAsync()
+    {
+        var deadline = DateTime.UtcNow + FirstFrameTimeout;
+        while (DateTime.UtcNow < deadline)
+        {
+            var frame = await _captureService.TryGetLatestFrameAsync();
+            if (frame is not null)
+            {
+                return frame;
+            }
+
+            await Task.Delay(50);
+        }
+
+        return null;
     }
 
     private async Task TickAsync()

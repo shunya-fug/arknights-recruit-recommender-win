@@ -11,14 +11,25 @@ using Windows.Graphics.DirectX.Direct3D11;
 namespace ArknightsRecruitRecommender.Services;
 
 /// <summary>
-/// Captures a single still frame from the Arknights game window using Windows.Graphics.Capture.
+/// Captures still frames from the Arknights game window using Windows.Graphics.Capture.
 /// This API (rather than the classic BitBlt/PrintWindow) is required because the game window is
 /// rendered via DirectX/GPU compositing, which BitBlt cannot reliably read.
+///
+/// The capture session (GraphicsCaptureItem/Direct3D11CaptureFramePool/GraphicsCaptureSession)
+/// is expensive to set up, so it is kept alive and reused across polling ticks via
+/// <see cref="EnsureSessionStarted"/> / <see cref="TryGetLatestFrameAsync"/> rather than being
+/// recreated every time a frame is needed. This is what makes frequent (e.g. 1 second interval)
+/// polling affordable.
 /// </summary>
 public sealed class WindowCaptureService : IDisposable
 {
     private readonly IntPtr _d3d11Device;
     private readonly IDirect3DDevice _direct3DDevice;
+
+    private GraphicsCaptureItem? _item;
+    private Direct3D11CaptureFramePool? _framePool;
+    private GraphicsCaptureSession? _session;
+    private IntPtr _activeHwnd;
 
     public WindowCaptureService()
     {
@@ -28,6 +39,8 @@ public sealed class WindowCaptureService : IDisposable
 
     /// <summary>
     /// Finds the main window of a running process by (partial, case-insensitive) title match.
+    /// Cheap (process/window enumeration only, no capture) - used every tick both to detect the
+    /// game starting and, when it stops returning a match, to detect the game closing.
     /// </summary>
     public static IntPtr? FindWindowByTitle(string titleContains)
     {
@@ -50,30 +63,63 @@ public sealed class WindowCaptureService : IDisposable
         return null;
     }
 
-    public async Task<BitmapSource> CaptureFrameAsync(IntPtr hwnd)
+    /// <summary>
+    /// Starts (or keeps, if already running for this exact window) a capture session for hwnd.
+    /// Call this every tick before <see cref="TryGetLatestFrameAsync"/> - it is a no-op when the
+    /// session is already active for the same window.
+    /// </summary>
+    public void EnsureSessionStarted(IntPtr hwnd)
     {
-        var item = GraphicsCaptureInterop.CreateItemForWindow(hwnd);
-        using var framePool = Direct3D11CaptureFramePool.CreateFreeThreaded(
+        if (_session is not null && _activeHwnd == hwnd)
+        {
+            return;
+        }
+
+        StopSession();
+
+        _item = GraphicsCaptureInterop.CreateItemForWindow(hwnd);
+        _framePool = Direct3D11CaptureFramePool.CreateFreeThreaded(
             _direct3DDevice,
             DirectXPixelFormat.B8G8R8A8UIntNormalized,
-            numberOfBuffers: 1,
-            item.Size);
+            numberOfBuffers: 2,
+            _item.Size);
+        _session = _framePool.CreateCaptureSession(_item);
+        _session.IsCursorCaptureEnabled = false;
+        _session.StartCapture();
+        _activeHwnd = hwnd;
+    }
 
-        var tcs = new TaskCompletionSource<Direct3D11CaptureFrame>();
-        framePool.FrameArrived += (pool, _) =>
+    /// <summary>
+    /// Tears down the active capture session (called once the game window is no longer found,
+    /// i.e. the game was closed) so GPU resources are not held while nothing is running.
+    /// </summary>
+    public void StopSession()
+    {
+        _session?.Dispose();
+        _framePool?.Dispose();
+        _session = null;
+        _framePool = null;
+        _item = null;
+        _activeHwnd = IntPtr.Zero;
+    }
+
+    /// <summary>
+    /// Pulls the most recently captured frame from the active session without waiting for a new
+    /// one to arrive. Returns null if no session is active, or no frame has been produced yet.
+    /// </summary>
+    public async Task<BitmapSource?> TryGetLatestFrameAsync()
+    {
+        if (_framePool is null)
         {
-            var frame = pool.TryGetNextFrame();
-            if (frame is not null)
-            {
-                tcs.TrySetResult(frame);
-            }
-        };
+            return null;
+        }
 
-        using var session = framePool.CreateCaptureSession(item);
-        session.IsCursorCaptureEnabled = false;
-        session.StartCapture();
+        using var frame = _framePool.TryGetNextFrame();
+        if (frame is null)
+        {
+            return null;
+        }
 
-        using var frame = await tcs.Task.WaitAsync(TimeSpan.FromSeconds(5));
         return await ConvertFrameToBitmapSourceAsync(frame);
     }
 
@@ -100,6 +146,7 @@ public sealed class WindowCaptureService : IDisposable
 
     public void Dispose()
     {
+        StopSession();
         Marshal.Release(_d3d11Device);
     }
 }
