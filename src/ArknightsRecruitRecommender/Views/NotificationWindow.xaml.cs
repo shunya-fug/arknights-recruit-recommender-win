@@ -63,4 +63,10 @@ public partial class NotificationWindow : Window
         _autoHideTimer.Stop();
         _autoHideTimer.Start();
     }
+
+    private void CloseButton_Click(object sender, RoutedEventArgs e)
+    {
+        _autoHideTimer.Stop();
+        Hide();
+    }
 }

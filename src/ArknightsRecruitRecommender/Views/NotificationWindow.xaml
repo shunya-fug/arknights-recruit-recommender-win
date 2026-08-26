@@ -15,12 +15,32 @@
             CornerRadius="8"
             Padding="14,10">
         <StackPanel MinWidth="260" MaxWidth="360">
-            <TextBlock x:Name="TitleText"
-                       Text="★4以上 確定タグの組み合わせ"
-                       Foreground="#FF4FC3F7"
-                       FontWeight="Bold"
-                       FontSize="13"
-                       Margin="0,0,0,6" />
+            <Grid Margin="0,0,0,6">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="TitleText"
+                           Grid.Column="0"
+                           Text="★4以上 確定タグの組み合わせ"
+                           Foreground="#FF4FC3F7"
+                           FontWeight="Bold"
+                           FontSize="13"
+                           VerticalAlignment="Center" />
+                <Button x:Name="CloseButton"
+                        Grid.Column="1"
+                        Content="×"
+                        Width="20"
+                        Height="20"
+                        Padding="0"
+                        Margin="6,0,0,0"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Foreground="White"
+                        FontSize="14"
+                        Cursor="Hand"
+                        Click="CloseButton_Click" />
+            </Grid>
             <ItemsControl x:Name="ResultsList">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
