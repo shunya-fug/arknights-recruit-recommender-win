@@ -11,6 +11,16 @@ public sealed class RecruitmentMonitorService : IDisposable
     private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan FirstFrameTimeout = TimeSpan.FromMilliseconds(500);
 
+    // 公開求人のタグ選択画面かどうかを判定するための閾値。実機のスクリーンショットで確認した
+    // ところ、この画面では既知タグ全種類(現行データで29種類)ではなく、1枠あたり5〜6個の
+    // タグボタンがランダムに表示される仕様だった(全タグから3個まで選んで組み合わせる)。
+    // 一方、それ以外の画面ではOCRの誤検出があっても同時に一致するタグ数はごく少数にとどまる。
+    // 実機で「公開求人画面以外でも通知が頻発する」問題が確認されたため、タグ一致数がこの閾値
+    // 未満の場合は「その画面を見ていない」とみなして通知の対象から除外する。OCRの読み落とし
+    // (実機で1枠分の一部タグが読み取れないケースを確認済み)を許容しつつ、誤検出とは
+    // 十分な差をつけられる値として3とした。
+    private const int MinMatchedTagsForRecruitmentScreen = 3;
+
     private readonly WindowCaptureService _captureService = new();
     private readonly TagOcrService _ocrService;
     private readonly RecruitmentAnalyzer _analyzer = new();
@@ -125,7 +135,7 @@ public sealed class RecruitmentMonitorService : IDisposable
         try
         {
             var result = await CheckOnceCoreAsync();
-            if (result is null || result.MatchedTags.Count == 0)
+            if (result is null || result.MatchedTags.Count < MinMatchedTagsForRecruitmentScreen)
             {
                 return;
             }

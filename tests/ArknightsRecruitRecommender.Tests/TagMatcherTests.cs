@@ -53,6 +53,19 @@ public class TagMatcherTests
     }
 
     [Fact]
+    public void ShortFragmentContainedInLongerTag_IsNotMatched()
+    {
+        // 公開求人画面以外の画面でOCRが拾った無関係な短い断片が、長いタグ名の部分文字列に
+        // 偶然一致して誤検出を起こさないようにするための回帰テスト。
+        var detected = new[] { Word("Gu") };
+        var knownTags = new[] { "Guard" };
+
+        var result = TagMatcher.MatchKnownTags(detected, knownTags);
+
+        Assert.Empty(result);
+    }
+
+    [Fact]
     public void WithinEditDistanceTolerance_IsMatched()
     {
         // "Guard" -> "Guaad" は1文字置換(編集距離1)。デフォルトのmaxEditDistance=1で一致するはず。
@@ -122,6 +135,20 @@ public class TagMatcherTests
         var result = TagMatcher.MatchKnownTags(new[] { Word("Guard") }, Array.Empty<string>());
 
         Assert.Empty(result);
+    }
+
+    [Fact]
+    public void ExactMatch_DoesNotAlsoFuzzyMatchASimilarSiblingTag()
+    {
+        // 実機で確認した回帰テスト: 「近距離」と「遠距離」は編集距離1しか離れていないため、
+        // OCRが「遠距離」を正確に読み取った場合でも、「近距離」側からの編集距離判定が
+        // 独立して成立してしまい、両方が同時に検出されるバグがあった。
+        var detected = new[] { Word("遠距離") };
+        var knownTags = new[] { "近距離", "遠距離" };
+
+        var result = TagMatcher.MatchKnownTags(detected, knownTags);
+
+        Assert.Equal(new[] { "遠距離" }, result);
     }
 
     [Fact]
