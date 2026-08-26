@@ -6,8 +6,19 @@ public class OperatorDatasetBuilderTests
 {
     private static GachaTableData SampleGachaData() => new()
     {
+        // tagId 1〜10は職業/位置タグの解決にも使われるため、テストで使う職業/位置は
+        // 実際のtagId体系(OperatorDatasetBuilder.ProfessionTagId/PositionTagId)に
+        // 合わせて用意しておく。
         GachaTags = new List<GachaTag>
         {
+            new() { TagId = 1, TagName = "前衛タイプ" },
+            new() { TagId = 2, TagName = "狙撃タイプ" },
+            new() { TagId = 3, TagName = "重装タイプ" },
+            new() { TagId = 4, TagName = "医療タイプ" },
+            new() { TagId = 7, TagName = "特殊タイプ" },
+            new() { TagId = 8, TagName = "先鋒タイプ" },
+            new() { TagId = 9, TagName = "近距離" },
+            new() { TagId = 10, TagName = "遠距離" },
             new() { TagId = 11, TagName = "上級エリート" },
             new() { TagId = 14, TagName = "エリート" },
         },
@@ -70,6 +81,59 @@ public class OperatorDatasetBuilderTests
         var op = result.Operators.Single(o => o.Name == "Lancet-2");
         Assert.Equal(1, op.Rarity);
         Assert.Equal(new[] { "医療タイプ", "遠距離", "ロボット", "治療" }, op.Tags);
+    }
+
+    [Fact]
+    public void ProfessionAndPositionTagNamesComeFromGachaTagsNotHardcodedJapanese()
+    {
+        // 職業/位置タグの文字列は言語ごとのgachaTagsから動的に引く設計であることの確認。
+        // 日本語決め打ちなら、このテスト(gachaTagsが英語)では日本語のタグ名が返ってきてしまう。
+        var tiers = TiersWithOverride(1, "Lancet-2");
+        var characters = CharactersWithFillers(
+            new CharacterTableEntry { Name = "Lancet-2", Rarity = "TIER_1", Profession = "MEDIC", Position = "RANGED", TagList = new List<string> { "Robot", "Healing" } });
+
+        var englishGachaData = new GachaTableData
+        {
+            GachaTags = new List<GachaTag>
+            {
+                new() { TagId = 2, TagName = "Sniper" }, // fillerの職業(SNIPER)解決用
+                new() { TagId = 4, TagName = "Medic" },
+                new() { TagId = 9, TagName = "Melee" },
+                new() { TagId = 10, TagName = "Ranged" },
+            },
+            SpecialTagRarityTable = new Dictionary<string, List<int>>(),
+        };
+
+        var result = OperatorDatasetBuilder.Build(tiers, characters, englishGachaData);
+
+        Assert.True(result.Success, string.Join(", ", result.Errors));
+        var op = result.Operators.Single(o => o.Name == "Lancet-2");
+        Assert.Equal(new[] { "Medic", "Ranged", "Robot", "Healing" }, op.Tags);
+    }
+
+    [Fact]
+    public void ReportsErrorWhenGachaTagsIsMissingTheProfessionsTagId()
+    {
+        var tiers = TiersWithOverride(3, "タグ欠損キャラ");
+        var characters = CharactersWithFillers(
+            new CharacterTableEntry { Name = "タグ欠損キャラ", Rarity = "TIER_3", Profession = "TANK", Position = "MELEE", TagList = new List<string>() });
+
+        // TANKのtagId=3がgachaTagsに存在しないケース(そのリージョンのデータが不完全な場合を想定)。
+        var incompleteGachaData = new GachaTableData
+        {
+            GachaTags = new List<GachaTag>
+            {
+                new() { TagId = 2, TagName = "狙撃タイプ" }, // fillerの職業(SNIPER)解決用
+                new() { TagId = 9, TagName = "近距離" },
+                new() { TagId = 10, TagName = "遠距離" },
+            },
+            SpecialTagRarityTable = new Dictionary<string, List<int>>(),
+        };
+
+        var result = OperatorDatasetBuilder.Build(tiers, characters, incompleteGachaData);
+
+        Assert.False(result.Success);
+        Assert.Contains(result.Errors, e => e.Contains("タグ欠損キャラ"));
     }
 
     [Fact]

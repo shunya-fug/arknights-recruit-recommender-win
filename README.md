@@ -82,6 +82,12 @@ tools/ArknightsDataGenerator.Tests/  上記の単体テスト
 名前が解決できないケースなど）を検知した場合は、出力を書き込まずにエラー終了する
 （`OperatorDatasetBuilder`が全件検証してから書き込むため、壊れたデータが気付かず生成されることを防ぐ）。
 
+職業タイプ・位置のタグ名（「前衛タイプ」等）は言語ごとに異なる文字列だが、コードには決め打ちせず、
+`gacha_table.json`の`gachaTags`から`tagId`をキーに動的に取得する。`tagId`の番号体系は
+CN/JP/EN等リージョンをまたいで共通であることを確認済みなので、`--gacha-source`/`--character-source`
+を他リージョンのURLに差し替えるだけで、そのリージョンの言語でタグが構築される
+（2言語目以降のデータ追加時にコード変更が不要になるようにするための設計）。
+
 ```bash
 dotnet run --project tools/ArknightsDataGenerator -- --output src/ArknightsRecruitRecommender/Data/operators.ja-JP.json
 ```
