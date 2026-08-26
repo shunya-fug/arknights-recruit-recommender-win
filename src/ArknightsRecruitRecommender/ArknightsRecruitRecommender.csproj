@@ -14,7 +14,8 @@
     <SelfContained>true</SelfContained>
     <PublishSingleFile>true</PublishSingleFile>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
-    <InvariantGlobalization>true</InvariantGlobalization>
+    <!-- GraphicsCaptureInterop.csの[GeneratedComInterface]が要求する -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
