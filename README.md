@@ -62,7 +62,33 @@ src/ArknightsRecruitRecommender/
   Views/NotificationWindow.xaml(.cs)  画面隅の常時最前面通知ウィンドウ
 tests/ArknightsRecruitRecommender.Tests/
   RecruitmentAnalyzerTests.cs  組み合わせ判定ロジックの単体テスト
+tools/ArknightsDataGenerator/
+  RecruitDetailParser.cs       gacha_table.jsonのrecruitDetailをレア度別名簿にパース
+  OperatorDatasetBuilder.cs    名簿とcharacter_table.jsonを突き合わせてoperators.ja-JP.jsonを生成
+  Program.cs                  CLIエントリポイント(データ取得元・出力先を引数で指定)
+tools/ArknightsDataGenerator.Tests/  上記の単体テスト
 ```
+
+## オペレーターデータの自動更新
+
+`tools/ArknightsDataGenerator`は、[ArknightsAssets/ArknightsGamedata](https://github.com/ArknightsAssets/ArknightsGamedata)
+から最新の`gacha_table.json`/`character_table.json`を取得し、`Data/operators.ja-JP.json`を
+再生成するCLIツール。手動で行った抽出手順（recruitDetailのパース→character_table.jsonとの
+突き合わせ→タグ構築）をそのままコード化したもので、生成結果は手動生成版と全156件で完全一致することを
+確認済み。
+
+想定外のデータ（未知のprofession値、recruitDetailとcharacter_table.jsonのレアリティ食い違い、
+名前が解決できないケースなど）を検知した場合は、出力を書き込まずにエラー終了する
+（`OperatorDatasetBuilder`が全件検証してから書き込むため、壊れたデータが気付かず生成されることを防ぐ）。
+
+```bash
+dotnet run --project tools/ArknightsDataGenerator -- --output src/ArknightsRecruitRecommender/Data/operators.ja-JP.json
+```
+
+GitHub Actions (`.github/workflows/update-operator-data.yml`) が毎日9:00(JST)に自動実行し、
+差分があればPRを作成する（直接コミットはしない。境界ケース、たとえば新規オペレーターが
+`character_table.json`にまだ反映されていないタイミングでの実行等を人が確認できるようにするため）。
+`workflow_dispatch`にも対応しているため、GitHub Actions画面から手動実行も可能。
 
 ## 動作モード
 

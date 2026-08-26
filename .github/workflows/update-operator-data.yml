@@ -1,0 +1,51 @@
+name: Update operator data
+
+on:
+  schedule:
+    # 毎日 09:00 JST (00:00 UTC)
+    - cron: "0 0 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Run data generator tests
+        run: dotnet test tools/ArknightsDataGenerator.Tests --configuration Release
+
+      - name: Generate latest operator data
+        run: >
+          dotnet run --project tools/ArknightsDataGenerator --configuration Release --
+          --output src/ArknightsRecruitRecommender/Data/operators.ja-JP.json
+
+      - name: Check for changes
+        id: diff
+        run: |
+          if git diff --quiet -- src/ArknightsRecruitRecommender/Data/operators.ja-JP.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create pull request
+        if: steps.diff.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "operators.ja-JP.jsonを最新の公開求人データに更新"
+          title: "オペレーター/タグデータの自動更新"
+          body: >
+            ArknightsAssets/ArknightsGamedata の最新データから
+            `tools/ArknightsDataGenerator` を実行して再生成した差分です。
+            マージ前に差分内容(追加・削除されたオペレーター)を確認してください。
+          branch: auto-update/operator-data
+          delete-branch: true
