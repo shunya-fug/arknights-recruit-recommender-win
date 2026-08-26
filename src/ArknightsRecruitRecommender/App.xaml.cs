@@ -21,6 +21,20 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
+        // 実機での動作確認時、GUIのダイアログ/通知ウィンドウが一瞬で消えて内容を確認できない
+        // ケースがあったため、UIスレッドで捕捉されなかった例外は握りつぶさずログに残す。
+        DispatcherUnhandledException += (_, args) =>
+        {
+            DiagnosticLog.Write($"[UnhandledException] {args.Exception}");
+#if DEBUG
+            // 実機検証中は、原因調査のためにアプリ全体を落とさずログだけ残して続行する。
+            // Releaseビルドでは適用しない(未知の例外を恒久的に握りつぶしたまま配布しないため)。
+            args.Handled = true;
+#endif
+        };
+
+        DiagnosticLog.Write("=== アプリ起動 ===");
+
         _settings = AppSettingsStore.Load();
 
         _trayIcon = (TaskbarIcon)FindResource("TrayIcon");
@@ -183,9 +197,11 @@ public partial class App : Application
             return;
         }
 
+        DiagnosticLog.Write("[手動チェック] 開始");
         try
         {
             var result = await _monitor.CheckOnceAsync();
+            DiagnosticLog.Write($"[手動チェック] CheckOnceAsync完了: result={(result is null ? "null" : "非null")}");
             if (result is null)
             {
                 MessageBox.Show(
@@ -197,15 +213,21 @@ public partial class App : Application
                 return;
             }
 
+            DiagnosticLog.Write(
+                $"[手動チェック] 検出タグ: {(result.MatchedTags.Count == 0 ? "(一致なし)" : string.Join(" / ", result.MatchedTags))}");
+
 #if DEBUG
             var outputDirectory = Path.Combine(AppContext.BaseDirectory, "debug-output");
             DebugArtifactWriter.Write(result, outputDirectory);
+            DiagnosticLog.Write($"[手動チェック] debug-output書き出し完了: {outputDirectory}");
 #endif
 
             _notificationWindow.ShowDebugResult(result);
+            DiagnosticLog.Write("[手動チェック] 通知ウィンドウ表示呼び出し完了");
         }
         catch (Exception ex)
         {
+            DiagnosticLog.Write($"[手動チェック] 例外発生: {ex}");
             MessageBox.Show(
                 $"手動チェック実行中にエラーが発生しました:\n{ex}",
                 "手動チェック実行",
