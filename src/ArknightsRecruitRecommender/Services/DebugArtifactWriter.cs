@@ -36,7 +36,7 @@ public static class DebugArtifactWriter
     {
         var sb = new StringBuilder();
 
-        sb.AppendLine("=== OCRで検出された生の単語 ===");
+        sb.AppendLine("=== OCRで検出された単語(同じ行の近接文字は結合済み) ===");
         foreach (var word in result.RawOcrWords)
         {
             sb.AppendLine($"  \"{word.Text}\" (x={word.X:F0}, y={word.Y:F0}, w={word.Width:F0}, h={word.Height:F0})");

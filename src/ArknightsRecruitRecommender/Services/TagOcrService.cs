@@ -47,12 +47,12 @@ public sealed class TagOcrService
         var softwareBitmap = await ConvertToSoftwareBitmapAsync(capturedFrame);
         var result = await _engine.RecognizeAsync(softwareBitmap);
 
-        var detected = new List<DetectedTag>();
+        var words = new List<DetectedTag>();
         foreach (var line in result.Lines)
         {
             foreach (var word in line.Words)
             {
-                detected.Add(new DetectedTag(
+                words.Add(new DetectedTag(
                     word.Text,
                     word.BoundingRect.X,
                     word.BoundingRect.Y,
@@ -61,7 +61,7 @@ public sealed class TagOcrService
             }
         }
 
-        return detected;
+        return OcrWordClusterer.Cluster(words);
     }
 
     private static async Task<Windows.Graphics.Imaging.SoftwareBitmap> ConvertToSoftwareBitmapAsync(BitmapSource source)
