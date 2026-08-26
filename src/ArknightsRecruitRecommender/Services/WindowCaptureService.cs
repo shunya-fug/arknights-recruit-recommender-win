@@ -40,18 +40,21 @@ public sealed class WindowCaptureService : IDisposable
     }
 
     /// <summary>
-    /// 実行中プロセスから、ウィンドウタイトルの部分一致（大文字小文字を無視）でメインウィンドウを探す。
-    /// プロセス/ウィンドウの列挙のみでキャプチャを伴わない軽量な処理のため、ゲームの起動検知・
-    /// 終了検知（見つからなくなったら終了とみなす）の両方に毎ティック使う。
+    /// 実行中プロセスから、プロセス名（実行ファイル名。拡張子無し）の完全一致でメインウィンドウを
+    /// 探す。ウィンドウタイトルでの一致は使わない。実機確認の結果、実際のウィンドウタイトルは
+    /// 表示言語によって変わる（例:日本語版では「アークナイツ」）一方、プロセス名(Arknights.exe)は
+    /// 言語に関わらず変わらないため。プロセス/ウィンドウの列挙のみでキャプチャを伴わない軽量な
+    /// 処理のため、ゲームの起動検知・終了検知（見つからなくなったら終了とみなす）の両方に
+    /// 毎ティック使う。
     /// </summary>
-    public static IntPtr? FindWindowByTitle(string titleContains)
+    public static IntPtr? FindWindowByProcessName(string processName)
     {
         foreach (var process in Process.GetProcesses())
         {
             try
             {
                 if (process.MainWindowHandle != IntPtr.Zero &&
-                    process.MainWindowTitle.Contains(titleContains, StringComparison.OrdinalIgnoreCase))
+                    string.Equals(process.ProcessName, processName, StringComparison.OrdinalIgnoreCase))
                 {
                     return process.MainWindowHandle;
                 }

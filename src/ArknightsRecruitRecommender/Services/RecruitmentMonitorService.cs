@@ -6,7 +6,8 @@ namespace ArknightsRecruitRecommender.Services;
 
 public sealed class RecruitmentMonitorService : IDisposable
 {
-    private const string GameWindowTitleHint = "Arknights";
+    // 実機確認済み: PC版アークナイツの実行ファイル名(表示言語に関わらず共通)。
+    private const string GameProcessName = "Arknights";
     private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan FirstFrameTimeout = TimeSpan.FromMilliseconds(500);
 
@@ -68,7 +69,7 @@ public sealed class RecruitmentMonitorService : IDisposable
     /// </summary>
     private async Task<RecruitmentCheckResult?> CheckOnceCoreAsync()
     {
-        var hwnd = WindowCaptureService.FindWindowByTitle(GameWindowTitleHint);
+        var hwnd = WindowCaptureService.FindWindowByProcessName(GameProcessName);
         if (hwnd is null)
         {
             _captureService.StopSession();
