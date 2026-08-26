@@ -1,5 +1,6 @@
 using System.Windows.Media.Imaging;
 using ArknightsRecruitRecommender.Models;
+using Windows.Globalization;
 
 namespace ArknightsRecruitRecommender.Services;
 
@@ -10,7 +11,7 @@ public sealed class RecruitmentMonitorService : IDisposable
     private static readonly TimeSpan FirstFrameTimeout = TimeSpan.FromMilliseconds(500);
 
     private readonly WindowCaptureService _captureService = new();
-    private readonly TagOcrService _ocrService = new();
+    private readonly TagOcrService _ocrService;
     private readonly RecruitmentAnalyzer _analyzer = new();
     private readonly IReadOnlyList<OperatorInfo> _operators;
     private readonly IReadOnlyList<string> _knownTags;
@@ -24,10 +25,16 @@ public sealed class RecruitmentMonitorService : IDisposable
 
     public event Action<IReadOnlyList<CombinationResult>>? GoodCombinationsFound;
 
-    public RecruitmentMonitorService(OperatorDataProvider dataProvider)
+    /// <param name="locale">
+    /// 使用するオペレーターデータとOCR言語を一致させるためのロケール(例:"ja-JP")。
+    /// ゲームの表示言語とOSの言語設定は必ずしも一致しないため、OSのプロファイル言語からの
+    /// 自動選択には頼らず、常にこの値を明示的にOCRエンジンへ渡す。
+    /// </param>
+    public RecruitmentMonitorService(string locale)
     {
-        _operators = dataProvider.Load();
+        _operators = new OperatorDataProvider(locale: locale).Load();
         _knownTags = OperatorDataProvider.GetAllKnownTags(_operators);
+        _ocrService = new TagOcrService(new Language(locale));
         _timer = new System.Threading.Timer(_ => _ = TickAsync(), null, TimeSpan.Zero, PollInterval);
     }
 

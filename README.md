@@ -57,7 +57,8 @@ src/ArknightsRecruitRecommender/
     TagMatcher.cs            OCR結果と既知タグのあいまい一致
     RecruitmentAnalyzer.cs   タグ組み合わせ（1〜3個）ごとの確定レアリティ判定ロジック
     RecruitmentMonitorService.cs  上記を束ねるポーリングループ
-    OperatorDataProvider.cs  オペレーター/タグデータの読み込み
+    OperatorDataProvider.cs  オペレーター/タグデータの読み込み・利用可能ロケール一覧の取得
+    AppSettingsStore.cs      言語設定の永続化(%LOCALAPPDATA%配下のJSON)
   Data/operators.ja-JP.json  オペレーター/タグデータ（日本版実データ。下記参照）
   Views/NotificationWindow.xaml(.cs)  画面隅の常時最前面通知ウィンドウ
 tests/ArknightsRecruitRecommender.Tests/
@@ -89,6 +90,23 @@ GitHub Actions (`.github/workflows/update-operator-data.yml`) が毎日9:00(JST)
 差分があればPRを作成する（直接コミットはしない。境界ケース、たとえば新規オペレーターが
 `character_table.json`にまだ反映されていないタイミングでの実行等を人が確認できるようにするため）。
 `workflow_dispatch`にも対応しているため、GitHub Actions画面から手動実行も可能。
+
+## 言語設定
+
+タスクトレイメニューの「言語」から、使用する言語（ロケール）を選択できる。選択肢は
+`Data/operators.{ロケール}.json`という命名のファイルが`Data`フォルダに存在するかどうかから
+動的に決まるため、新しい言語のデータファイルを追加するだけで選択肢に増える（コード変更不要）。
+
+選択した言語は`OperatorDataProvider`（読み込むオペレーターデータ）と`TagOcrService`（OCR時に
+要求する言語）の両方に連動する。ゲームの表示言語とOSの言語設定は必ずしも一致しないため、OSの
+プロファイル言語からの自動選択（`OcrEngine.TryCreateFromUserProfileLanguages()`）には頼らず、
+選択したロケールを常に明示的にOCRエンジンへ渡している。
+
+選択時、その言語のOCR言語パックが端末にインストール済みかを`OcrEngine.AvailableRecognizerLanguages`
+で事前に確認し、未インストールなら警告を出す（この判定はWindows側の言語パック登録がタグの主言語
+部分だけ、例えば"ja-JP"ではなく"ja"、で行われることがあるため、完全一致ではなく主言語部分で比較する
+必要がある）。設定は`%LOCALAPPDATA%\ArknightsRecruitRecommender\settings.json`に保存し、変更の
+反映にはアプリの再起動が必要（実行中のインスタンスに対する常時監視のホットスワップは行わない）。
 
 ## 動作モード
 

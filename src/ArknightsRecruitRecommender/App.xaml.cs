@@ -1,9 +1,12 @@
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Windows;
+using ArknightsRecruitRecommender.Models;
 using ArknightsRecruitRecommender.Services;
 using ArknightsRecruitRecommender.Views;
 using H.NotifyIcon;
+using Language = Windows.Globalization.Language;
 
 namespace ArknightsRecruitRecommender;
 
@@ -12,10 +15,13 @@ public partial class App : Application
     private TaskbarIcon? _trayIcon;
     private RecruitmentMonitorService? _monitor;
     private NotificationWindow? _notificationWindow;
+    private AppSettings _settings = AppSettings.Default;
 
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        _settings = AppSettingsStore.Load();
 
         _trayIcon = (TaskbarIcon)FindResource("TrayIcon");
         _trayIcon.Icon = CreatePlaceholderIcon();
@@ -24,11 +30,20 @@ public partial class App : Application
 
         _notificationWindow = new NotificationWindow();
 
-        // 常時監視は常に動作する。「手動チェック実行」メニューはそれとは独立して、いつでも手動で
-        // 1回分のチェックを実行し、結果をdebug-output/に書き出すための機能。
-        _monitor = new RecruitmentMonitorService(new OperatorDataProvider());
+        StartMonitor();
+    }
+
+    /// <summary>
+    /// 常時監視は常に動作する。「手動チェック実行」メニューはそれとは独立して、いつでも手動で
+    /// 1回分のチェックを実行し、結果をdebug-output/に書き出すための機能。
+    /// 言語設定を切り替えた際は、アプリ再起動によってこのメソッドが新しいロケールで
+    /// 再度呼ばれる想定(実行中のインスタンスをホットスワップはしない)。
+    /// </summary>
+    private void StartMonitor()
+    {
+        _monitor = new RecruitmentMonitorService(_settings.Locale);
         _monitor.GoodCombinationsFound += results =>
-            Dispatcher.Invoke(() => _notificationWindow.ShowResults(results));
+            Dispatcher.Invoke(() => _notificationWindow!.ShowResults(results));
     }
 
     private System.Windows.Controls.ContextMenu BuildContextMenu()
@@ -39,6 +54,8 @@ public partial class App : Application
         manualCheckItem.Click += async (_, _) => await RunManualCheckAsync();
         menu.Items.Add(manualCheckItem);
 
+        menu.Items.Add(BuildLanguageMenuItem());
+
         menu.Items.Add(new System.Windows.Controls.Separator());
 
         var exitItem = new System.Windows.Controls.MenuItem { Header = "終了" };
@@ -46,6 +63,111 @@ public partial class App : Application
         menu.Items.Add(exitItem);
 
         return menu;
+    }
+
+    // MenuItemのIsCheckableはラジオボタンのような排他選択を自動ではしてくれない
+    // (クリックされた項目自身のIsCheckedがトグルされるだけ)ため、兄弟項目のチェック状態は
+    // このリストを使って手動で管理する。
+    private readonly List<(string Locale, System.Windows.Controls.MenuItem Item)> _languageMenuItems = new();
+
+    /// <summary>
+    /// 「言語」サブメニュー。選択肢はData/operators.{locale}.jsonの存在から動的に決まる
+    /// (新しい言語のデータファイルを追加するだけで選択肢に反映される)。
+    /// </summary>
+    private System.Windows.Controls.MenuItem BuildLanguageMenuItem()
+    {
+        var languageMenu = new System.Windows.Controls.MenuItem { Header = "言語" };
+        _languageMenuItems.Clear();
+
+        foreach (var locale in OperatorDataProvider.GetAvailableLocales())
+        {
+            var language = new Language(locale);
+            var item = new System.Windows.Controls.MenuItem
+            {
+                Header = language.DisplayName,
+                IsCheckable = true,
+                IsChecked = locale == _settings.Locale,
+            };
+            item.Click += (_, _) => OnLanguageSelected(locale);
+            _languageMenuItems.Add((locale, item));
+            languageMenu.Items.Add(item);
+        }
+
+        return languageMenu;
+    }
+
+    private void OnLanguageSelected(string locale)
+    {
+        if (locale == _settings.Locale)
+        {
+            SetCheckedLanguage(_settings.Locale);
+            return;
+        }
+
+        var language = new Language(locale);
+        if (!TagOcrService.IsLanguageAvailable(language))
+        {
+            var proceed = MessageBox.Show(
+                $"「{language.DisplayName}」のOCR言語パックがこの端末にインストールされていません。" +
+                "このまま切り替えても、パックを追加するまで画面のタグを認識できません。\n\n" +
+                "切り替えを続けますか？（設定 > 時刻と言語 > 言語と地域 から追加できます）",
+                "言語設定",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+
+            if (proceed != MessageBoxResult.Yes)
+            {
+                SetCheckedLanguage(_settings.Locale);
+                return;
+            }
+        }
+
+        _settings = _settings with { Locale = locale };
+        AppSettingsStore.Save(_settings);
+        SetCheckedLanguage(locale);
+
+        var restartNow = MessageBox.Show(
+            "言語設定を変更しました。反映するにはアプリの再起動が必要です。今すぐ再起動しますか？",
+            "言語設定",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Information);
+
+        if (restartNow == MessageBoxResult.Yes)
+        {
+            RestartApplication();
+        }
+    }
+
+    private void SetCheckedLanguage(string locale)
+    {
+        foreach (var (itemLocale, item) in _languageMenuItems)
+        {
+            item.IsChecked = itemLocale == locale;
+        }
+    }
+
+    private void RestartApplication()
+    {
+        try
+        {
+            var exePath = Process.GetCurrentProcess().MainModule?.FileName;
+            if (exePath is not null)
+            {
+                Process.Start(exePath);
+            }
+        }
+        catch (Exception ex)
+        {
+            // 自動再起動に失敗しても、これから終了すること自体は変わらない。手動での
+            // 再起動をお願いするだけにとどめ、原因不明のクラッシュとして落とさない。
+            MessageBox.Show(
+                $"アプリの自動再起動に失敗しました。手動で起動し直してください。\n\n{ex.Message}",
+                "言語設定",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+        }
+
+        Shutdown();
     }
 
     /// <summary>

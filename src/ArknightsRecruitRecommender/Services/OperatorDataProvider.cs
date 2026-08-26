@@ -25,6 +25,25 @@ public sealed class OperatorDataProvider
     public static IReadOnlyList<string> GetAllKnownTags(IReadOnlyList<OperatorInfo> operators) =>
         operators.SelectMany(o => o.Tags).Distinct().OrderBy(t => t).ToList();
 
+    /// <summary>
+    /// Data/operators.{locale}.json という命名のファイルをDataフォルダから走査し、
+    /// 現在選択可能なロケール一覧を返す。新しい言語のデータファイルを追加するだけで
+    /// 選択肢に反映されるようにするため、ロケール一覧をハードコードしない。
+    /// </summary>
+    public static IReadOnlyList<string> GetAvailableLocales()
+    {
+        var dataDirectory = Path.Combine(AppContext.BaseDirectory, "Data");
+        if (!Directory.Exists(dataDirectory))
+        {
+            return Array.Empty<string>();
+        }
+
+        return Directory.GetFiles(dataDirectory, "operators.*.json")
+            .Select(path => Path.GetFileNameWithoutExtension(path)["operators.".Length..])
+            .OrderBy(locale => locale, StringComparer.Ordinal)
+            .ToList();
+    }
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
