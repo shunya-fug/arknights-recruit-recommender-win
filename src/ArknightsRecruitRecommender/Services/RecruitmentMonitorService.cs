@@ -8,8 +8,8 @@ public sealed class RecruitmentMonitorService : IDisposable
 {
     // 実機確認済み: PC版アークナイツの実行ファイル名(表示言語に関わらず共通)。
     private const string GameProcessName = "Arknights";
-    private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(1);
-    private static readonly TimeSpan FirstFrameTimeout = TimeSpan.FromMilliseconds(500);
+    private static readonly TimeSpan PollInterval = TimeSpan.FromMilliseconds(200);
+    private static readonly TimeSpan FirstFrameTimeout = TimeSpan.FromMilliseconds(100);
 
     // 公開求人のタグ選択画面かどうかを判定するための閾値。実機のスクリーンショットで確認した
     // ところ、この画面では既知タグ全種類(現行データで29種類)ではなく、1枠あたり5〜6個の
