@@ -81,6 +81,20 @@ public partial class App : Application
         return menu;
     }
 
+    /// <summary>
+    /// トレイのコンテキストメニュー項目のクリック直後にMessageBox.Showを呼ぶと、メニューを
+    /// 閉じたクリックの入力メッセージがそのまま新しいダイアログに流れ込み、表示直後に自動的に
+    /// 閉じてしまう不具合を実機で確認した(表示から149ms後に閉じており、人がクリックできる
+    /// 速さではなかった)。入力キューが落ち着くまで少し待ってから表示することで回避する。
+    /// メニュー項目のクリックハンドラから表示するダイアログは、必ずこれ経由で表示すること。
+    /// </summary>
+    private static async Task<MessageBoxResult> ShowMessageBoxAsync(
+        string text, string caption, MessageBoxButton button, MessageBoxImage icon)
+    {
+        await Task.Delay(200);
+        return MessageBox.Show(text, caption, button, icon);
+    }
+
     // MenuItemのIsCheckableはラジオボタンのような排他選択を自動ではしてくれない
     // (クリックされた項目自身のIsCheckedがトグルされるだけ)ため、兄弟項目のチェック状態は
     // このリストを使って手動で管理する。
@@ -104,7 +118,7 @@ public partial class App : Application
                 IsCheckable = true,
                 IsChecked = locale == _settings.Locale,
             };
-            item.Click += (_, _) => OnLanguageSelected(locale);
+            item.Click += async (_, _) => await OnLanguageSelectedAsync(locale);
             _languageMenuItems.Add((locale, item));
             languageMenu.Items.Add(item);
         }
@@ -112,7 +126,7 @@ public partial class App : Application
         return languageMenu;
     }
 
-    private void OnLanguageSelected(string locale)
+    private async Task OnLanguageSelectedAsync(string locale)
     {
         if (locale == _settings.Locale)
         {
@@ -123,7 +137,7 @@ public partial class App : Application
         var language = new Language(locale);
         if (!TagOcrService.IsLanguageAvailable(language))
         {
-            var proceed = MessageBox.Show(
+            var proceed = await ShowMessageBoxAsync(
                 $"「{language.DisplayName}」のOCR言語パックがこの端末にインストールされていません。" +
                 "このまま切り替えても、パックを追加するまで画面のタグを認識できません。\n\n" +
                 "切り替えを続けますか？（設定 > 時刻と言語 > 言語と地域 から追加できます）",
@@ -142,7 +156,7 @@ public partial class App : Application
         AppSettingsStore.Save(_settings);
         SetCheckedLanguage(locale);
 
-        var restartNow = MessageBox.Show(
+        var restartNow = await ShowMessageBoxAsync(
             "言語設定を変更しました。反映するにはアプリの再起動が必要です。今すぐ再起動しますか？",
             "言語設定",
             MessageBoxButton.YesNo,
@@ -150,7 +164,7 @@ public partial class App : Application
 
         if (restartNow == MessageBoxResult.Yes)
         {
-            RestartApplication();
+            await RestartApplicationAsync();
         }
     }
 
@@ -162,7 +176,7 @@ public partial class App : Application
         }
     }
 
-    private void RestartApplication()
+    private async Task RestartApplicationAsync()
     {
         try
         {
@@ -176,7 +190,7 @@ public partial class App : Application
         {
             // 自動再起動に失敗しても、これから終了すること自体は変わらない。手動での
             // 再起動をお願いするだけにとどめ、原因不明のクラッシュとして落とさない。
-            MessageBox.Show(
+            await ShowMessageBoxAsync(
                 $"アプリの自動再起動に失敗しました。手動で起動し直してください。\n\n{ex.Message}",
                 "言語設定",
                 MessageBoxButton.OK,
@@ -206,7 +220,7 @@ public partial class App : Application
             DiagnosticLog.Write($"[手動チェック] CheckOnceAsync完了: result={(result is null ? "null" : "非null")}");
             if (result is null)
             {
-                MessageBox.Show(
+                await ShowMessageBoxAsync(
                     "アークナイツの画面を取得できませんでした。ゲームが起動しているか、" +
                     "ウィンドウが最小化されていないか確認してください。",
                     "手動チェック実行",
@@ -230,7 +244,7 @@ public partial class App : Application
         catch (Exception ex)
         {
             DiagnosticLog.Write($"[手動チェック] 例外発生: {ex}");
-            MessageBox.Show(
+            await ShowMessageBoxAsync(
                 $"手動チェック実行中にエラーが発生しました:\n{ex}",
                 "手動チェック実行",
                 MessageBoxButton.OK,
