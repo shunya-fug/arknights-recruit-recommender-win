@@ -38,7 +38,7 @@ public partial class App : Application
         _settings = AppSettingsStore.Load();
 
         _trayIcon = (TaskbarIcon)FindResource("TrayIcon");
-        _trayIcon.Icon = CreatePlaceholderIcon();
+        _trayIcon.Icon = LoadTrayIcon();
         _trayIcon.ContextMenu = BuildContextMenu();
         _trayIcon.ForceCreate();
 
@@ -253,20 +253,14 @@ public partial class App : Application
     }
 
     /// <summary>
-    /// Generates a simple placeholder tray icon at runtime so the app doesn't need to ship a
-    /// binary .ico asset. Replace with a real .ico via TaskbarIcon.IconSource if desired.
+    /// Assets/AppIcon.icoを読み込む。Process.MainModuleからexe自体のアイコンを拾う方式だと
+    /// dotnet &lt;dll&gt; 起動時にdotnet.exeのアイコンを拾ってしまうため、起動方法によらず
+    /// 確実に自前のアイコンを読めるようAppContext.BaseDirectory基準でファイルを直接読む。
     /// </summary>
-    private static Icon CreatePlaceholderIcon()
+    private static Icon LoadTrayIcon()
     {
-        using var bitmap = new Bitmap(32, 32);
-        using (var g = Graphics.FromImage(bitmap))
-        {
-            g.Clear(Color.Transparent);
-            using var brush = new SolidBrush(Color.FromArgb(255, 79, 195, 247));
-            g.FillEllipse(brush, 2, 2, 28, 28);
-        }
-
-        return Icon.FromHandle(bitmap.GetHicon());
+        var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "AppIcon.ico");
+        return new Icon(iconPath);
     }
 
     protected override void OnExit(ExitEventArgs e)
