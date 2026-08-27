@@ -33,8 +33,16 @@ public sealed class RecruitmentMonitorService : IDisposable
 
     private readonly System.Threading.Timer _timer;
     private IReadOnlyList<string>? _lastVisibleTags;
+    private bool _isOnRecruitmentScreen;
 
     public event Action<IReadOnlyList<CombinationResult>>? GoodCombinationsFound;
+
+    /// <summary>
+    /// 公開求人のタグ選択画面を検出できなくなった(＝タグ一致数が閾値未満になった、または
+    /// ゲームウィンドウ自体が見つからなくなった)ことを通知する。通知ウィンドウを、時間経過
+    /// ではなく画面から離れたタイミングで閉じるために使う。
+    /// </summary>
+    public event Action? RecruitmentScreenLost;
 
     /// <param name="locale">
     /// 使用するオペレーターデータとOCR言語を一致させるためのロケール(例:"ja-JP")。
@@ -135,18 +143,31 @@ public sealed class RecruitmentMonitorService : IDisposable
         try
         {
             var result = await CheckOnceCoreAsync();
-            if (result is null || result.MatchedTags.Count < MinMatchedTagsForRecruitmentScreen)
+            var isOnRecruitmentScreen = result is not null && result.MatchedTags.Count >= MinMatchedTagsForRecruitmentScreen;
+
+            if (!isOnRecruitmentScreen)
             {
+                // 画面から離れた瞬間(検出できていた状態→できなくなった状態への遷移)だけ通知する。
+                // 見失ったままの状態が続く間、毎ティック無駄にイベントを発火させないため。
+                if (_isOnRecruitmentScreen)
+                {
+                    RecruitmentScreenLost?.Invoke();
+                }
+
+                _isOnRecruitmentScreen = false;
+                _lastVisibleTags = null;
                 return;
             }
+
+            _isOnRecruitmentScreen = true;
 
             // Avoid re-notifying for the same tag set every poll cycle.
-            if (_lastVisibleTags is not null && _lastVisibleTags.SequenceEqual(result.MatchedTags))
+            if (_lastVisibleTags is not null && _lastVisibleTags.SequenceEqual(result!.MatchedTags))
             {
                 return;
             }
 
-            _lastVisibleTags = result.MatchedTags;
+            _lastVisibleTags = result!.MatchedTags;
 
             var goodCombinations = result.Combinations.Where(r => r.IsRecommended).ToList();
             if (goodCombinations.Count > 0)
