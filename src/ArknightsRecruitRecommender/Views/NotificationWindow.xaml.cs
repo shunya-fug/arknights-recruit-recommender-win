@@ -1,23 +1,13 @@
 using System.Windows;
-using System.Windows.Threading;
 using ArknightsRecruitRecommender.Models;
 
 namespace ArknightsRecruitRecommender.Views;
 
 public partial class NotificationWindow : Window
 {
-    private static readonly TimeSpan AutoHideDelay = TimeSpan.FromSeconds(12);
-    private readonly DispatcherTimer _autoHideTimer;
-
     public NotificationWindow()
     {
         InitializeComponent();
-        _autoHideTimer = new DispatcherTimer { Interval = AutoHideDelay };
-        _autoHideTimer.Tick += (_, _) =>
-        {
-            _autoHideTimer.Stop();
-            Hide();
-        };
 
         var workArea = SystemParameters.WorkArea;
         Left = workArea.Right - 380;
@@ -28,13 +18,13 @@ public partial class NotificationWindow : Window
     {
         TitleText.Text = "★4以上 確定タグの組み合わせ";
         ResultsList.ItemsSource = results.Select(FormatCombination);
-        Display();
+        Show();
     }
 
     /// <summary>
-    /// Manual check entry point (tray menu "手動チェック実行"): shows every detected tag and
-    /// combination, not just the recommended ones, so the pipeline's behavior is visible even
-    /// when nothing good was found.
+    /// おすすめ組み合わせの算出はタグさえ正しく検出できれば決まる静的なロジックのため、
+    /// 手動チェックでも通常の自動検出(<see cref="ShowResults"/>)と同じ「おすすめのみ」を表示する。
+    /// 検出タグ一覧だけは、OCR・照合の動作確認のために全件表示する。
     /// </summary>
     public void ShowDebugResult(RecruitmentCheckResult result)
     {
@@ -46,22 +36,14 @@ public partial class NotificationWindow : Window
                 ? "検出タグ: (一致なし)"
                 : $"検出タグ: {string.Join(" / ", result.MatchedTags)}",
         };
-        lines.AddRange(result.Combinations.Select(FormatCombination));
+        lines.AddRange(result.Combinations.Where(r => r.IsRecommended).Select(FormatCombination));
 
         ResultsList.ItemsSource = lines;
-        Display();
-    }
-
-    private static string FormatCombination(CombinationResult r)
-    {
-        var marker = r.IsRecommended ? "[おすすめ] " : "";
-        return $"{marker}[{string.Join(" / ", r.Tags)}] -> {r.GuaranteedMinRarity}★以上確定 ({r.MatchingOperators.Count}件)";
-    }
-
-    private void Display()
-    {
         Show();
-        _autoHideTimer.Stop();
-        _autoHideTimer.Start();
     }
+
+    private static string FormatCombination(CombinationResult r) =>
+        $"[{string.Join(" / ", r.Tags)}] -> {r.GuaranteedMinRarity}★以上確定 ({r.MatchingOperators.Count}件)";
+
+    private void CloseButton_Click(object sender, RoutedEventArgs e) => Hide();
 }

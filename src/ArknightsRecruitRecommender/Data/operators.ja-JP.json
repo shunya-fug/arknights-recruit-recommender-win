@@ -1,0 +1,1607 @@
+[
+  {
+    "Name": "CONFESS-47",
+    "Rarity": 1,
+    "Tags": [
+      "\u5148\u92D2\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u30ED\u30DC\u30C3\u30C8",
+      "\u727D\u5236"
+    ]
+  },
+  {
+    "Name": "Castle-3",
+    "Rarity": 1,
+    "Tags": [
+      "\u524D\u885B\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u30ED\u30DC\u30C3\u30C8",
+      "\u652F\u63F4"
+    ]
+  },
+  {
+    "Name": "Friston-3",
+    "Rarity": 1,
+    "Tags": [
+      "\u91CD\u88C5\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u30ED\u30DC\u30C3\u30C8",
+      "\u9632\u5FA1"
+    ]
+  },
+  {
+    "Name": "Lancet-2",
+    "Rarity": 1,
+    "Tags": [
+      "\u533B\u7642\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u30ED\u30DC\u30C3\u30C8",
+      "\u6CBB\u7642"
+    ]
+  },
+  {
+    "Name": "PhonoR-0",
+    "Rarity": 1,
+    "Tags": [
+      "\u88DC\u52A9\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u30ED\u30DC\u30C3\u30C8",
+      "\u5143\u7D20"
+    ]
+  },
+  {
+    "Name": "THRM-EX",
+    "Rarity": 1,
+    "Tags": [
+      "\u7279\u6B8A\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u30ED\u30DC\u30C3\u30C8",
+      "\u7206\u767A\u529B"
+    ]
+  },
+  {
+    "Name": "\u30B8\u30E3\u30B9\u30C6\u30A3\u30B9\u30CA\u30A4\u30C8",
+    "Rarity": 1,
+    "Tags": [
+      "\u72D9\u6483\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u30ED\u30DC\u30C3\u30C8",
+      "\u652F\u63F4"
+    ]
+  },
+  {
+    "Name": "12F",
+    "Rarity": 2,
+    "Tags": [
+      "\u8853\u5E2B\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u521D\u671F"
+    ]
+  },
+  {
+    "Name": "\u30C9\u30A5\u30EA\u30F3",
+    "Rarity": 2,
+    "Tags": [
+      "\u8853\u5E2B\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u521D\u671F"
+    ]
+  },
+  {
+    "Name": "\u30CE\u30A4\u30EB\u30DB\u30FC\u30F3",
+    "Rarity": 2,
+    "Tags": [
+      "\u91CD\u88C5\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u521D\u671F"
+    ]
+  },
+  {
+    "Name": "\u30E4\u30C8\u30A6",
+    "Rarity": 2,
+    "Tags": [
+      "\u5148\u92D2\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u521D\u671F"
+    ]
+  },
+  {
+    "Name": "\u30EC\u30F3\u30B8\u30E3\u30FC",
+    "Rarity": 2,
+    "Tags": [
+      "\u72D9\u6483\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u521D\u671F"
+    ]
+  },
+  {
+    "Name": "\u30A2\u30C9\u30CA\u30AD\u30A8\u30EB",
+    "Rarity": 3,
+    "Tags": [
+      "\u72D9\u6483\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u706B\u529B"
+    ]
+  },
+  {
+    "Name": "\u30A2\u30F3\u30BB\u30EB",
+    "Rarity": 3,
+    "Tags": [
+      "\u533B\u7642\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u6CBB\u7642"
+    ]
+  },
+  {
+    "Name": "\u30AA\u30FC\u30AD\u30C3\u30C9",
+    "Rarity": 3,
+    "Tags": [
+      "\u88DC\u52A9\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u6E1B\u901F"
+    ]
+  },
+  {
+    "Name": "\u30AB\u30BF\u30D1\u30EB\u30C8",
+    "Rarity": 3,
+    "Tags": [
+      "\u72D9\u6483\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u7BC4\u56F2\u653B\u6483"
+    ]
+  },
+  {
+    "Name": "\u30AF\u30EB\u30FC\u30B9",
+    "Rarity": 3,
+    "Tags": [
+      "\u72D9\u6483\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u706B\u529B"
+    ]
+  },
+  {
+    "Name": "\u30B9\u30C1\u30E5\u30EF\u30FC\u30C9",
+    "Rarity": 3,
+    "Tags": [
+      "\u8853\u5E2B\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u706B\u529B"
+    ]
+  },
+  {
+    "Name": "\u30B9\u30DD\u30C3\u30C8",
+    "Rarity": 3,
+    "Tags": [
+      "\u91CD\u88C5\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u9632\u5FA1",
+      "\u6CBB\u7642"
+    ]
+  },
+  {
+    "Name": "\u30CF\u30A4\u30D3\u30B9\u30AB\u30B9",
+    "Rarity": 3,
+    "Tags": [
+      "\u533B\u7642\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u6CBB\u7642"
+    ]
+  },
+  {
+    "Name": "\u30D0\u30CB\u30E9",
+    "Rarity": 3,
+    "Tags": [
+      "\u5148\u92D2\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "COST\u56DE\u5FA9"
+    ]
+  },
+  {
+    "Name": "\u30D3\u30FC\u30B0\u30EB",
+    "Rarity": 3,
+    "Tags": [
+      "\u91CD\u88C5\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u9632\u5FA1"
+    ]
+  },
+  {
+    "Name": "\u30D5\u30A7\u30F3",
+    "Rarity": 3,
+    "Tags": [
+      "\u5148\u92D2\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "COST\u56DE\u5FA9"
+    ]
+  },
+  {
+    "Name": "\u30D7\u30EA\u30E5\u30E0",
+    "Rarity": 3,
+    "Tags": [
+      "\u5148\u92D2\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u706B\u529B",
+      "COST\u56DE\u5FA9"
+    ]
+  },
+  {
+    "Name": "\u30DD\u30D7\u30AB\u30EB",
+    "Rarity": 3,
+    "Tags": [
+      "\u524D\u885B\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u7BC4\u56F2\u653B\u6483",
+      "\u751F\u5B58"
+    ]
+  },
+  {
+    "Name": "\u30DF\u30C3\u30C9\u30CA\u30A4\u30C8",
+    "Rarity": 3,
+    "Tags": [
+      "\u524D\u885B\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u706B\u529B"
+    ]
+  },
+  {
+    "Name": "\u30E1\u30E9\u30F3\u30B5",
+    "Rarity": 3,
+    "Tags": [
+      "\u524D\u885B\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u706B\u529B",
+      "\u751F\u5B58"
+    ]
+  },
+  {
+    "Name": "\u30E9\u30F4\u30A1",
+    "Rarity": 3,
+    "Tags": [
+      "\u8853\u5E2B\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u7BC4\u56F2\u653B\u6483"
+    ]
+  },
+  {
+    "Name": "\u30A2\u30B7\u30C3\u30C9\u30C9\u30ED\u30C3\u30D7",
+    "Rarity": 4,
+    "Tags": [
+      "\u72D9\u6483\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u706B\u529B"
+    ]
+  },
+  {
+    "Name": "\u30A2\u30EC\u30FC\u30F3",
+    "Rarity": 4,
+    "Tags": [
+      "\u524D\u885B\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u706B\u529B"
+    ]
+  },
+  {
+    "Name": "\u30A2\u30F3\u30D6\u30EA\u30A8\u30EB",
+    "Rarity": 4,
+    "Tags": [
+      "\u72D9\u6483\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u706B\u529B",
+      "\u6E1B\u901F"
+    ]
+  },
+  {
+    "Name": "\u30A2\u30FC\u30B9\u30B9\u30D4\u30EA\u30C3\u30C8",
+    "Rarity": 4,
+    "Tags": [
+      "\u88DC\u52A9\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u6E1B\u901F"
+    ]
+  },
+  {
+    "Name": "\u30A4\u30F3\u30C7\u30A3\u30B4",
+    "Rarity": 4,
+    "Tags": [
+      "\u8853\u5E2B\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u706B\u529B",
+      "\u727D\u5236"
+    ]
+  },
+  {
+    "Name": "\u30A6\u30BF\u30B2",
+    "Rarity": 4,
+    "Tags": [
+      "\u524D\u885B\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u706B\u529B",
+      "\u751F\u5B58"
+    ]
+  },
+  {
+    "Name": "\u30A8\u30B9\u30C6\u30EB",
+    "Rarity": 4,
+    "Tags": [
+      "\u524D\u885B\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u7BC4\u56F2\u653B\u6483",
+      "\u751F\u5B58"
+    ]
+  },
+  {
+    "Name": "\u30AB\u30B7\u30E3",
+    "Rarity": 4,
+    "Tags": [
+      "\u8853\u5E2B\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u706B\u529B",
+      "\u727D\u5236"
+    ]
+  },
+  {
+    "Name": "\u30AB\u30C3\u30BF\u30FC",
+    "Rarity": 4,
+    "Tags": [
+      "\u524D\u885B\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u7206\u767A\u529B",
+      "\u706B\u529B"
+    ]
+  },
+  {
+    "Name": "\u30AE\u30BF\u30FC\u30CE",
+    "Rarity": 4,
+    "Tags": [
+      "\u8853\u5E2B\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u7BC4\u56F2\u653B\u6483"
+    ]
+  },
+  {
+    "Name": "\u30AF\u30AA\u30FC\u30E9",
+    "Rarity": 4,
+    "Tags": [
+      "\u91CD\u88C5\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u9632\u5FA1"
+    ]
+  },
+  {
+    "Name": "\u30B0\u30E0",
+    "Rarity": 4,
+    "Tags": [
+      "\u91CD\u88C5\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u9632\u5FA1",
+      "\u6CBB\u7642"
+    ]
+  },
+  {
+    "Name": "\u30B0\u30E9\u30D9\u30EB",
+    "Rarity": 4,
+    "Tags": [
+      "\u7279\u6B8A\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u9AD8\u901F\u518D\u914D\u7F6E",
+      "\u9632\u5FA1"
+    ]
+  },
+  {
+    "Name": "\u30B0\u30EC\u30A4",
+    "Rarity": 4,
+    "Tags": [
+      "\u8853\u5E2B\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u7BC4\u56F2\u653B\u6483",
+      "\u6E1B\u901F"
+    ]
+  },
+  {
+    "Name": "\u30B7\u30E7\u30A6",
+    "Rarity": 4,
+    "Tags": [
+      "\u7279\u6B8A\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u5F37\u5236\u79FB\u52D5"
+    ]
+  },
+  {
+    "Name": "\u30B7\u30E9\u30E6\u30AD",
+    "Rarity": 4,
+    "Tags": [
+      "\u72D9\u6483\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u7BC4\u56F2\u653B\u6483",
+      "\u6E1B\u901F"
+    ]
+  },
+  {
+    "Name": "\u30B8\u30A7\u30A4",
+    "Rarity": 4,
+    "Tags": [
+      "\u7279\u6B8A\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u9AD8\u901F\u518D\u914D\u7F6E",
+      "\u706B\u529B"
+    ]
+  },
+  {
+    "Name": "\u30B8\u30A7\u30B7\u30AB",
+    "Rarity": 4,
+    "Tags": [
+      "\u72D9\u6483\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u706B\u529B",
+      "\u751F\u5B58"
+    ]
+  },
+  {
+    "Name": "\u30B8\u30E3\u30C3\u30AD\u30FC",
+    "Rarity": 4,
+    "Tags": [
+      "\u524D\u885B\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u706B\u529B"
+    ]
+  },
+  {
+    "Name": "\u30B9\u30AB\u30D9\u30F3\u30B8\u30E3\u30FC",
+    "Rarity": 4,
+    "Tags": [
+      "\u5148\u92D2\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "COST\u56DE\u5FA9",
+      "\u706B\u529B"
+    ]
+  },
+  {
+    "Name": "\u30B9\u30B9\u30FC\u30ED",
+    "Rarity": 4,
+    "Tags": [
+      "\u533B\u7642\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u6CBB\u7642"
+    ]
+  },
+  {
+    "Name": "\u30BB\u30A4\u30EA\u30E5\u30A6",
+    "Rarity": 4,
+    "Tags": [
+      "\u533B\u7642\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u6CBB\u7642",
+      "\u652F\u63F4"
+    ]
+  },
+  {
+    "Name": "\u30C6\u30F3\u30CB\u30F3\u30AB",
+    "Rarity": 4,
+    "Tags": [
+      "\u5148\u92D2\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "COST\u56DE\u5FA9",
+      "\u6CBB\u7642"
+    ]
+  },
+  {
+    "Name": "\u30C9\u30FC\u30D9\u30EB\u30DE\u30F3",
+    "Rarity": 4,
+    "Tags": [
+      "\u524D\u885B\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u706B\u529B",
+      "\u652F\u63F4"
+    ]
+  },
+  {
+    "Name": "\u30D0\u30D6\u30EB",
+    "Rarity": 4,
+    "Tags": [
+      "\u91CD\u88C5\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u9632\u5FA1"
+    ]
+  },
+  {
+    "Name": "\u30D1\u30A4\u30F3\u30B3\u30FC\u30F3",
+    "Rarity": 4,
+    "Tags": [
+      "\u72D9\u6483\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u7BC4\u56F2\u653B\u6483",
+      "\u706B\u529B"
+    ]
+  },
+  {
+    "Name": "\u30D1\u30D5\u30E5\u30FC\u30DE\u30FC",
+    "Rarity": 4,
+    "Tags": [
+      "\u533B\u7642\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u6CBB\u7642"
+    ]
+  },
+  {
+    "Name": "\u30D3\u30FC\u30CF\u30F3\u30BF\u30FC",
+    "Rarity": 4,
+    "Tags": [
+      "\u524D\u885B\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u706B\u529B"
+    ]
+  },
+  {
+    "Name": "\u30D3\u30FC\u30F3\u30B9\u30C8\u30FC\u30AF",
+    "Rarity": 4,
+    "Tags": [
+      "\u5148\u92D2\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "COST\u56DE\u5FA9",
+      "\u53EC\u559A"
+    ]
+  },
+  {
+    "Name": "\u30D5\u30ED\u30B9\u30C8\u30EA\u30FC\u30D5",
+    "Rarity": 4,
+    "Tags": [
+      "\u524D\u885B\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u6E1B\u901F",
+      "\u706B\u529B"
+    ]
+  },
+  {
+    "Name": "\u30D8\u30A4\u30BA",
+    "Rarity": 4,
+    "Tags": [
+      "\u8853\u5E2B\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u706B\u529B",
+      "\u5F31\u5316"
+    ]
+  },
+  {
+    "Name": "\u30DD\u30C7\u30F3\u30B3",
+    "Rarity": 4,
+    "Tags": [
+      "\u88DC\u52A9\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u6E1B\u901F",
+      "\u6CBB\u7642"
+    ]
+  },
+  {
+    "Name": "\u30DE\u30C3\u30BF\u30FC\u30DB\u30EB\u30F3",
+    "Rarity": 4,
+    "Tags": [
+      "\u91CD\u88C5\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u9632\u5FA1"
+    ]
+  },
+  {
+    "Name": "\u30DE\u30C8\u30A4\u30DE\u30EB",
+    "Rarity": 4,
+    "Tags": [
+      "\u524D\u885B\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u751F\u5B58",
+      "\u706B\u529B"
+    ]
+  },
+  {
+    "Name": "\u30DF\u30EB\u30E9",
+    "Rarity": 4,
+    "Tags": [
+      "\u533B\u7642\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u6CBB\u7642"
+    ]
+  },
+  {
+    "Name": "\u30E0\u30FC\u30B9",
+    "Rarity": 4,
+    "Tags": [
+      "\u524D\u885B\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u706B\u529B"
+    ]
+  },
+  {
+    "Name": "\u30E1\u30A4",
+    "Rarity": 4,
+    "Tags": [
+      "\u72D9\u6483\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u706B\u529B",
+      "\u6E1B\u901F"
+    ]
+  },
+  {
+    "Name": "\u30E1\u30C6\u30AA",
+    "Rarity": 4,
+    "Tags": [
+      "\u72D9\u6483\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u706B\u529B",
+      "\u5F31\u5316"
+    ]
+  },
+  {
+    "Name": "\u30ED\u30FC\u30D7",
+    "Rarity": 4,
+    "Tags": [
+      "\u7279\u6B8A\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u5F37\u5236\u79FB\u52D5"
+    ]
+  },
+  {
+    "Name": "\u30F4\u30A1\u30FC\u30DF\u30EB",
+    "Rarity": 4,
+    "Tags": [
+      "\u72D9\u6483\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u706B\u529B"
+    ]
+  },
+  {
+    "Name": "\u30F4\u30A3\u30B0\u30CA",
+    "Rarity": 4,
+    "Tags": [
+      "\u5148\u92D2\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u706B\u529B",
+      "COST\u56DE\u5FA9"
+    ]
+  },
+  {
+    "Name": "\u30A2\u30A4\u30EA\u30B9",
+    "Rarity": 5,
+    "Tags": [
+      "\u8853\u5E2B\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u706B\u529B",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30A2\u30AA\u30B9\u30BF",
+    "Rarity": 5,
+    "Tags": [
+      "\u72D9\u6483\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u7BC4\u56F2\u653B\u6483",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30A2\u30AB\u30D5\u30E6",
+    "Rarity": 5,
+    "Tags": [
+      "\u524D\u885B\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u751F\u5B58",
+      "\u706B\u529B",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30A2\u30B9\u30C6\u30B7\u30A2",
+    "Rarity": 5,
+    "Tags": [
+      "\u524D\u885B\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u706B\u529B",
+      "\u9632\u5FA1",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30A2\u30B9\u30D9\u30B9\u30C8\u30B9",
+    "Rarity": 5,
+    "Tags": [
+      "\u91CD\u88C5\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u9632\u5FA1",
+      "\u706B\u529B",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30A2\u30BA\u30EA\u30A6\u30B9",
+    "Rarity": 5,
+    "Tags": [
+      "\u72D9\u6483\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u706B\u529B",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30A2\u30F3\u30C9\u30EC\u30A2\u30CA",
+    "Rarity": 5,
+    "Tags": [
+      "\u72D9\u6483\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u706B\u529B",
+      "\u6E1B\u901F",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30A4\u30B0\u30BC\u30AD\u30E5\u30BF\u30FC",
+    "Rarity": 5,
+    "Tags": [
+      "\u72D9\u6483\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u7BC4\u56F2\u653B\u6483",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30A4\u30F3\u30C9\u30E9",
+    "Rarity": 5,
+    "Tags": [
+      "\u524D\u885B\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u706B\u529B",
+      "\u751F\u5B58",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30A4\u30FC\u30B9\u30C1\u30CA",
+    "Rarity": 5,
+    "Tags": [
+      "\u88DC\u52A9\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u6E1B\u901F",
+      "\u706B\u529B",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30A6\u30A3\u30B9\u30D1\u30FC\u30EC\u30A4\u30F3",
+    "Rarity": 5,
+    "Tags": [
+      "\u533B\u7642\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u6CBB\u7642",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30A6\u30E6\u30A6",
+    "Rarity": 5,
+    "Tags": [
+      "\u7279\u6B8A\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u9AD8\u901F\u518D\u914D\u7F6E",
+      "\u706B\u529B",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30A6\u30F3",
+    "Rarity": 5,
+    "Tags": [
+      "\u91CD\u88C5\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u9632\u5FA1",
+      "\u6CBB\u7642",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30A8\u30A2\u30FC\u30B9\u30AB\u30FC\u30DA",
+    "Rarity": 5,
+    "Tags": [
+      "\u524D\u885B\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u706B\u529B",
+      "\u7BC4\u56F2\u653B\u6483",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30A8\u30A4\u30D7\u30EA\u30EB",
+    "Rarity": 5,
+    "Tags": [
+      "\u72D9\u6483\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u706B\u529B",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30A8\u30D5\u30A4\u30FC\u30BF\u30FC",
+    "Rarity": 5,
+    "Tags": [
+      "\u7279\u6B8A\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u5F37\u5236\u79FB\u52D5",
+      "\u6E1B\u901F",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30A8\u30EA\u30B8\u30A6\u30E0",
+    "Rarity": 5,
+    "Tags": [
+      "\u5148\u92D2\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "COST\u56DE\u5FA9",
+      "\u652F\u63F4",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30AB\u30D5\u30AB",
+    "Rarity": 5,
+    "Tags": [
+      "\u7279\u6B8A\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u9AD8\u901F\u518D\u914D\u7F6E",
+      "\u727D\u5236",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30AD\u30A2\u30FC\u30D9",
+    "Rarity": 5,
+    "Tags": [
+      "\u5148\u92D2\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "COST\u56DE\u5FA9",
+      "\u706B\u529B",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30AD\u30E9\u30E9",
+    "Rarity": 5,
+    "Tags": [
+      "\u7279\u6B8A\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u706B\u529B",
+      "\u751F\u5B58",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30AF\u30EA\u30D5\u30CF\u30FC\u30C8",
+    "Rarity": 5,
+    "Tags": [
+      "\u7279\u6B8A\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u5F37\u5236\u79FB\u52D5",
+      "\u706B\u529B",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30AF\u30ED\u30EF\u30C3\u30B5\u30F3",
+    "Rarity": 5,
+    "Tags": [
+      "\u91CD\u88C5\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u9632\u5FA1",
+      "\u5F37\u5236\u79FB\u52D5",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30B0\u30E9\u30A6\u30B3\u30B9",
+    "Rarity": 5,
+    "Tags": [
+      "\u88DC\u52A9\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u6E1B\u901F",
+      "\u727D\u5236",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30B0\u30EC\u30FC\u30B9\u30ED\u30FC\u30C8",
+    "Rarity": 5,
+    "Tags": [
+      "\u72D9\u6483\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u706B\u529B",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30B5\u30A4\u30EC\u30F3\u30B9",
+    "Rarity": 5,
+    "Tags": [
+      "\u533B\u7642\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u6CBB\u7642",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30B7\u30A7\u30FC\u30B7\u30E3",
+    "Rarity": 5,
+    "Tags": [
+      "\u72D9\u6483\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u7BC4\u56F2\u653B\u6483",
+      "\u5F31\u5316",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30B7\u30E3\u30DE\u30EC",
+    "Rarity": 5,
+    "Tags": [
+      "\u88DC\u52A9\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u5F31\u5316",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30B9\u30DA\u30AF\u30BF\u30FC",
+    "Rarity": 5,
+    "Tags": [
+      "\u524D\u885B\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u7BC4\u56F2\u653B\u6483",
+      "\u751F\u5B58",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30B9\u30EF\u30A4\u30E4\u30FC",
+    "Rarity": 5,
+    "Tags": [
+      "\u524D\u885B\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u706B\u529B",
+      "\u652F\u63F4",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30BA\u30A3\u30DE\u30FC",
+    "Rarity": 5,
+    "Tags": [
+      "\u5148\u92D2\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "COST\u56DE\u5FA9",
+      "\u652F\u63F4",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30C4\u30AD\u30CE\u30AE",
+    "Rarity": 5,
+    "Tags": [
+      "\u88DC\u52A9\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u652F\u63F4",
+      "\u751F\u5B58",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30C6\u30AD\u30B5\u30B9",
+    "Rarity": 5,
+    "Tags": [
+      "\u5148\u92D2\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "COST\u56DE\u5FA9",
+      "\u727D\u5236",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30C8\u30AE\u30D5\u30A9\u30F3\u30B9",
+    "Rarity": 5,
+    "Tags": [
+      "\u72D9\u6483\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u706B\u529B",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30CA\u30A4\u30C8\u30E1\u30A2",
+    "Rarity": 5,
+    "Tags": [
+      "\u8853\u5E2B\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u706B\u529B",
+      "\u6CBB\u7642",
+      "\u6E1B\u901F",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30CB\u30A2\u30FC\u30EB",
+    "Rarity": 5,
+    "Tags": [
+      "\u91CD\u88C5\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u9632\u5FA1",
+      "\u6CBB\u7642",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30D3\u30FC\u30BA\u30EF\u30AF\u30B9",
+    "Rarity": 5,
+    "Tags": [
+      "\u8853\u5E2B\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u7BC4\u56F2\u653B\u6483",
+      "\u9632\u5FA1",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30D5\u30A1\u30A4\u30E4\u30FC\u30A6\u30A9\u30C3\u30C1",
+    "Rarity": 5,
+    "Tags": [
+      "\u72D9\u6483\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u706B\u529B",
+      "\u7206\u767A\u529B",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30D5\u30A3\u30EA\u30AA\u30D7\u30B7\u30B9",
+    "Rarity": 5,
+    "Tags": [
+      "\u533B\u7642\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u6CBB\u7642",
+      "\u652F\u63F4",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30D5\u30EA\u30F3\u30C8",
+    "Rarity": 5,
+    "Tags": [
+      "\u524D\u885B\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u706B\u529B",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30D6\u30ED\u30FC\u30AB",
+    "Rarity": 5,
+    "Tags": [
+      "\u524D\u885B\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u7BC4\u56F2\u653B\u6483",
+      "\u751F\u5B58",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30D7\u30E9\u30C1\u30CA",
+    "Rarity": 5,
+    "Tags": [
+      "\u72D9\u6483\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u706B\u529B",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30D7\u30E9\u30DE\u30CB\u30AF\u30B9",
+    "Rarity": 5,
+    "Tags": [
+      "\u88DC\u52A9\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u5F31\u5316",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30D7\u30ED\u30F4\u30A1\u30F3\u30B9",
+    "Rarity": 5,
+    "Tags": [
+      "\u72D9\u6483\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u706B\u529B",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30DE\u30F3\u30C6\u30A3\u30B3\u30A2",
+    "Rarity": 5,
+    "Tags": [
+      "\u7279\u6B8A\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u706B\u529B",
+      "\u751F\u5B58",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30E1\u30A4\u30E4\u30FC",
+    "Rarity": 5,
+    "Tags": [
+      "\u88DC\u52A9\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u53EC\u559A",
+      "\u727D\u5236",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30E1\u30C6\u30AA\u30EA\u30FC\u30C6",
+    "Rarity": 5,
+    "Tags": [
+      "\u72D9\u6483\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u7BC4\u56F2\u653B\u6483",
+      "\u5F31\u5316",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30EA\u30B9\u30AB\u30E0",
+    "Rarity": 5,
+    "Tags": [
+      "\u91CD\u88C5\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u9632\u5FA1",
+      "\u706B\u529B",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30EA\u30FC\u30C9",
+    "Rarity": 5,
+    "Tags": [
+      "\u5148\u92D2\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "COST\u56DE\u5FA9",
+      "\u706B\u529B",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30EC\u30A4\u30BA",
+    "Rarity": 5,
+    "Tags": [
+      "\u8853\u5E2B\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u706B\u529B",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30EC\u30AA\u30F3\u30CF\u30EB\u30C8",
+    "Rarity": 5,
+    "Tags": [
+      "\u8853\u5E2B\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u7BC4\u56F2\u653B\u6483",
+      "\u7206\u767A\u529B",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30EC\u30C3\u30C9",
+    "Rarity": 5,
+    "Tags": [
+      "\u7279\u6B8A\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u9AD8\u901F\u518D\u914D\u7F6E",
+      "\u727D\u5236",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30EF\u30A4\u30D5\u30FC",
+    "Rarity": 5,
+    "Tags": [
+      "\u7279\u6B8A\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u9AD8\u901F\u518D\u914D\u7F6E",
+      "\u5F31\u5316",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30EF\u30EB\u30D5\u30A1\u30EA\u30F3",
+    "Rarity": 5,
+    "Tags": [
+      "\u533B\u7642\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u6CBB\u7642",
+      "\u652F\u63F4",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30F4\u30A1\u30EB\u30AB\u30F3",
+    "Rarity": 5,
+    "Tags": [
+      "\u91CD\u88C5\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u751F\u5B58",
+      "\u9632\u5FA1",
+      "\u706B\u529B",
+      "\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30A2",
+    "Rarity": 6,
+    "Tags": [
+      "\u7279\u6B8A\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u652F\u63F4",
+      "\u706B\u529B",
+      "\u4E0A\u7D1A\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30A2\u30EB\u30B1\u30C3\u30C8",
+    "Rarity": 6,
+    "Tags": [
+      "\u72D9\u6483\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u706B\u529B",
+      "\u4E0A\u7D1A\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30A4\u30D5\u30EA\u30FC\u30BF",
+    "Rarity": 6,
+    "Tags": [
+      "\u8853\u5E2B\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u7BC4\u56F2\u653B\u6483",
+      "\u5F31\u5316",
+      "\u4E0A\u7D1A\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30A6\u30A3\u30FC\u30C7\u30A3",
+    "Rarity": 6,
+    "Tags": [
+      "\u7279\u6B8A\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u5F37\u5236\u79FB\u52D5",
+      "\u706B\u529B",
+      "\u727D\u5236",
+      "\u4E0A\u7D1A\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30A8\u30AF\u30B7\u30A2",
+    "Rarity": 6,
+    "Tags": [
+      "\u72D9\u6483\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u706B\u529B",
+      "\u4E0A\u7D1A\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30AB\u30FC\u30CD\u30EA\u30A2\u30F3",
+    "Rarity": 6,
+    "Tags": [
+      "\u8853\u5E2B\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u7BC4\u56F2\u653B\u6483",
+      "\u9632\u5FA1",
+      "\u4E0A\u7D1A\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30B1\u30AA\u30D9",
+    "Rarity": 6,
+    "Tags": [
+      "\u8853\u5E2B\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u706B\u529B",
+      "\u727D\u5236",
+      "\u4E0A\u7D1A\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30B1\u30EB\u30B7\u30FC",
+    "Rarity": 6,
+    "Tags": [
+      "\u533B\u7642\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u53EC\u559A",
+      "\u6CBB\u7642",
+      "\u4E0A\u7D1A\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30B5\u30AC",
+    "Rarity": 6,
+    "Tags": [
+      "\u5148\u92D2\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "COST\u56DE\u5FA9",
+      "\u706B\u529B",
+      "\u4E0A\u7D1A\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30B5\u30EA\u30A2",
+    "Rarity": 6,
+    "Tags": [
+      "\u91CD\u88C5\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u9632\u5FA1",
+      "\u6CBB\u7642",
+      "\u652F\u63F4",
+      "\u4E0A\u7D1A\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30B7\u30E3\u30A4\u30CB\u30F3\u30B0",
+    "Rarity": 6,
+    "Tags": [
+      "\u533B\u7642\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u6CBB\u7642",
+      "\u652F\u63F4",
+      "\u4E0A\u7D1A\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30B7\u30E5\u30F4\u30A1\u30EB\u30C4",
+    "Rarity": 6,
+    "Tags": [
+      "\u72D9\u6483\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u706B\u529B",
+      "\u4E0A\u7D1A\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30B7\u30EB\u30D0\u30FC\u30A2\u30C3\u30B7\u30E5",
+    "Rarity": 6,
+    "Tags": [
+      "\u524D\u885B\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u706B\u529B",
+      "\u652F\u63F4",
+      "\u4E0A\u7D1A\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30B7\u30FC\u30B8",
+    "Rarity": 6,
+    "Tags": [
+      "\u5148\u92D2\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "COST\u56DE\u5FA9",
+      "\u706B\u529B",
+      "\u4E0A\u7D1A\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30B9\u30AB\u30B8",
+    "Rarity": 6,
+    "Tags": [
+      "\u524D\u885B\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u706B\u529B",
+      "\u751F\u5B58",
+      "\u4E0A\u7D1A\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30B9\u30BA\u30E9\u30F3",
+    "Rarity": 6,
+    "Tags": [
+      "\u88DC\u52A9\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u6E1B\u901F",
+      "\u652F\u63F4",
+      "\u706B\u529B",
+      "\u4E0A\u7D1A\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30B9\u30EB\u30C8",
+    "Rarity": 6,
+    "Tags": [
+      "\u524D\u885B\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u706B\u529B",
+      "\u4E0A\u7D1A\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30BD\u30FC\u30F3\u30BA",
+    "Rarity": 6,
+    "Tags": [
+      "\u524D\u885B\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u706B\u529B",
+      "\u9632\u5FA1",
+      "\u4E0A\u7D1A\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30C1\u30A7\u30F3",
+    "Rarity": 6,
+    "Tags": [
+      "\u524D\u885B\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u7206\u767A\u529B",
+      "\u706B\u529B",
+      "\u4E0A\u7D1A\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30CA\u30A4\u30C1\u30F3\u30B2\u30FC\u30EB",
+    "Rarity": 6,
+    "Tags": [
+      "\u533B\u7642\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u6CBB\u7642",
+      "\u652F\u63F4",
+      "\u4E0A\u7D1A\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30D0\u30B0\u30D1\u30A4\u30D7",
+    "Rarity": 6,
+    "Tags": [
+      "\u5148\u92D2\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "COST\u56DE\u5FA9",
+      "\u706B\u529B",
+      "\u4E0A\u7D1A\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30D1\u30C3\u30BB\u30F3\u30B8\u30E3\u30FC",
+    "Rarity": 6,
+    "Tags": [
+      "\u8853\u5E2B\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u706B\u529B",
+      "\u4E0A\u7D1A\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30D5\u30A1\u30F3\u30C8\u30E0",
+    "Rarity": 6,
+    "Tags": [
+      "\u7279\u6B8A\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u9AD8\u901F\u518D\u914D\u7F6E",
+      "\u727D\u5236",
+      "\u706B\u529B",
+      "\u4E0A\u7D1A\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30D6\u30EC\u30A4\u30BA",
+    "Rarity": 6,
+    "Tags": [
+      "\u524D\u885B\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u706B\u529B",
+      "\u751F\u5B58",
+      "\u4E0A\u7D1A\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30D6\u30EC\u30DF\u30B7\u30E3\u30A4\u30F3",
+    "Rarity": 6,
+    "Tags": [
+      "\u91CD\u88C5\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u9632\u5FA1",
+      "\u6CBB\u7642",
+      "\u706B\u529B",
+      "\u4E0A\u7D1A\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30D8\u30E9\u30B0",
+    "Rarity": 6,
+    "Tags": [
+      "\u524D\u885B\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u706B\u529B",
+      "\u751F\u5B58",
+      "\u4E0A\u7D1A\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30DB\u30B7\u30B0\u30DE",
+    "Rarity": 6,
+    "Tags": [
+      "\u91CD\u88C5\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u9632\u5FA1",
+      "\u706B\u529B",
+      "\u4E0A\u7D1A\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30DE\u30A6\u30F3\u30C6\u30F3",
+    "Rarity": 6,
+    "Tags": [
+      "\u524D\u885B\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u706B\u529B",
+      "\u751F\u5B58",
+      "\u4E0A\u7D1A\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30DE\u30BC\u30E9\u30F3",
+    "Rarity": 6,
+    "Tags": [
+      "\u88DC\u52A9\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u652F\u63F4",
+      "\u6E1B\u901F",
+      "\u706B\u529B",
+      "\u4E0A\u7D1A\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30DE\u30C9\u30ED\u30C3\u30AF",
+    "Rarity": 6,
+    "Tags": [
+      "\u91CD\u88C5\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u751F\u5B58",
+      "\u9632\u5FA1",
+      "\u706B\u529B",
+      "\u4E0A\u7D1A\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30E2\u30B9\u30C6\u30A3\u30DE",
+    "Rarity": 6,
+    "Tags": [
+      "\u8853\u5E2B\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u7BC4\u56F2\u653B\u6483",
+      "\u652F\u63F4",
+      "\u727D\u5236",
+      "\u4E0A\u7D1A\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30E6\u30FC\u30CD\u30AF\u30C6\u30B9",
+    "Rarity": 6,
+    "Tags": [
+      "\u91CD\u88C5\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u706B\u529B",
+      "\u751F\u5B58",
+      "\u9632\u5FA1",
+      "\u4E0A\u7D1A\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30ED\u30B5",
+    "Rarity": 6,
+    "Tags": [
+      "\u72D9\u6483\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u706B\u529B",
+      "\u727D\u5236",
+      "\u4E0A\u7D1A\u30A8\u30EA\u30FC\u30C8"
+    ]
+  }
+]

@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
 using Windows.Graphics.Capture;
 using Windows.Graphics.DirectX.Direct3D11;
 using WinRT;
@@ -11,21 +12,71 @@ namespace ArknightsRecruitRecommender.Interop;
 /// be done by hand. This is the most version-fragile part of the app - if it stops compiling
 /// after a CsWinRT/.NET SDK upgrade, this is the first place to look.
 /// </summary>
-internal static class GraphicsCaptureInterop
+internal static partial class GraphicsCaptureInterop
 {
-    [ComImport]
+    // IGraphicsCaptureItemInteropはWinRTメタデータ(winmd)に存在しない素のネイティブCOM
+    // インターフェースであり、GraphicsCaptureItemの「インスタンス」ではなく「アクティベーション
+    // ファクトリ」が実装している。GraphicsCaptureItem.As<T>()はCsWinRTのメタデータベースの
+    // 投影機構でありwinmdに無いインターフェースは解決できず、実機ではE_NOINTERFACEになることを
+    // 確認した。正しくはRoGetActivationFactoryで明示的にこのIIDを指定してファクトリを取得する
+    // 必要がある(参考実装: https://github.com/microsoft/Windows.UI.Composition-Win32-Samples/
+    // blob/master/dotnet/WPF/ScreenCapture/Composition.WindowsRuntimeHelpers/CaptureHelper.cs
+    // ただしこのサンプルは.NET Framework専用のWindowsRuntimeMarshalを使っており.NET 8では
+    // 使えないため、RoGetActivationFactoryを直接P/Invokeし、[GeneratedComInterface]の
+    // ComInterfaceMarshallerで管理オブジェクト化する)。
+    [GeneratedComInterface]
     [Guid("3628E81B-3CAC-4C60-B7F4-23CE0E0C3356")]
-    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-    private interface IGraphicsCaptureItemInterop
+    internal partial interface IGraphicsCaptureItemInterop
     {
-        IntPtr CreateForWindow([In] IntPtr window, [In] ref Guid iid);
-        IntPtr CreateForMonitor([In] IntPtr monitor, [In] ref Guid iid);
+        IntPtr CreateForWindow(IntPtr window, ref Guid iid);
+        IntPtr CreateForMonitor(IntPtr monitor, ref Guid iid);
     }
+
+    [DllImport("combase.dll", PreserveSig = false)]
+    private static extern void RoGetActivationFactory(IntPtr activatableClassId, ref Guid iid, out IntPtr factory);
+
+    [DllImport("combase.dll", PreserveSig = false)]
+    private static extern void WindowsCreateString(
+        [MarshalAs(UnmanagedType.LPWStr)] string sourceString, int length, out IntPtr hstring);
+
+    [DllImport("combase.dll")]
+    private static extern int WindowsDeleteString(IntPtr hstring);
+
+    private static unsafe IGraphicsCaptureItemInterop GetGraphicsCaptureItemInterop()
+    {
+        const string ClassId = "Windows.Graphics.Capture.GraphicsCaptureItem";
+        WindowsCreateString(ClassId, ClassId.Length, out var classIdHandle);
+        try
+        {
+            var iid = typeof(IGraphicsCaptureItemInterop).GUID;
+            RoGetActivationFactory(classIdHandle, ref iid, out var factoryPointer);
+            try
+            {
+                return ComInterfaceMarshaller<IGraphicsCaptureItemInterop>.ConvertToManaged((void*)factoryPointer)!;
+            }
+            finally
+            {
+                Marshal.Release(factoryPointer);
+            }
+        }
+        finally
+        {
+            WindowsDeleteString(classIdHandle);
+        }
+    }
+
+    // typeof(GraphicsCaptureItem).GUIDはCsWinRTが投影用に生成した無関係なGUIDであり、
+    // ネイティブ側が期待するIID(GraphicsCaptureItemのデフォルトインターフェースIGraphicsCaptureItemの
+    // IID)とは一致しない。これを渡すとCreateForWindowがインターフェイスがサポートされていません
+    // (E_NOINTERFACE)を返すことを実機検証で確認した。正しいIIDはMicrosoft公式サンプルの
+    // https://github.com/microsoft/Windows.UI.Composition-Win32-Samples/blob/master/dotnet/WPF/
+    // ScreenCapture/Composition.WindowsRuntimeHelpers/CaptureHelper.cs にハードコードされている値。
+    private static readonly Guid GraphicsCaptureItemIid = new("79C3F95B-31F7-4EC2-A464-632EF5D30760");
 
     public static GraphicsCaptureItem CreateItemForWindow(IntPtr hwnd)
     {
-        var interop = GraphicsCaptureItem.As<IGraphicsCaptureItemInterop>();
-        var itemGuid = typeof(GraphicsCaptureItem).GUID;
+        var interop = GetGraphicsCaptureItemInterop();
+        var itemGuid = GraphicsCaptureItemIid;
         var itemPointer = interop.CreateForWindow(hwnd, ref itemGuid);
         try
         {

@@ -4,9 +4,9 @@ using ArknightsRecruitRecommender.Services;
 namespace ArknightsRecruitRecommender.Models;
 
 /// <summary>
-/// The full output of a single capture -> OCR -> tag match -> combination analysis pass.
-/// Kept together (rather than just raising the good combinations) so a caller such as the
-/// debug menu action can inspect every intermediate step when things don't work as expected.
+/// キャプチャ→OCR→タグ照合→組み合わせ判定1回分の全出力。おすすめ組み合わせだけでなく途中経過も
+/// まとめて保持することで、手動チェック実行のような呼び出し元が、期待通りに動かない時に
+/// 各段階の結果を確認できるようにしている。
 /// </summary>
 public sealed record RecruitmentCheckResult(
     BitmapSource Frame,

@@ -4,42 +4,55 @@ using Windows.Globalization;
 using Windows.Media.Ocr;
 using Windows.Storage.Streams;
 using WicBitmapDecoder = Windows.Graphics.Imaging.BitmapDecoder;
-using WpfBitmapFrame = System.Windows.Media.Imaging.BitmapFrame;
 
 namespace ArknightsRecruitRecommender.Services;
 
 public sealed record DetectedTag(string Text, double X, double Y, double Width, double Height);
 
 /// <summary>
-/// Wraps the built-in Windows OCR engine (Windows.Media.Ocr) so no external OCR dependency
-/// needs to be bundled. Recognized text is fuzzy-matched against the known tag vocabulary by
-/// the caller, since OCR of a stylized in-game font will not always be pixel-perfect.
+/// Windows標準のOCRエンジン(Windows.Media.Ocr)をラップし、外部OCR依存(Tesseract等)を
+/// 増やさずに済むようにする。ゲーム内の独特なフォントはOCRで完全一致しないことがあるため、
+/// 認識結果と既知タグとの照合(あいまい一致)は呼び出し側(TagMatcher)で行う。
+///
+/// 言語は常に明示的に指定する(OSのプロファイル言語からの自動選択には頼らない)。ゲームの
+/// 表示言語とOSの言語設定が一致するとは限らないため。
 /// </summary>
 public sealed class TagOcrService
 {
     private readonly OcrEngine _engine;
 
-    public TagOcrService(Language? language = null)
+    public TagOcrService(Language language)
     {
-        _engine = language is not null
-            ? OcrEngine.TryCreateFromLanguage(language)
-            : OcrEngine.TryCreateFromUserProfileLanguages()
-            ?? throw new InvalidOperationException(
-                "No OCR language pack is installed. Install the Windows OCR language pack " +
-                "for the language the game UI is displayed in (Settings > Time & Language > Language & region).");
+        _engine = OcrEngine.TryCreateFromLanguage(language) ?? throw new InvalidOperationException(
+            $"OCR言語パック「{language.DisplayName}」({language.LanguageTag})がインストールされていません。" +
+            "設定 > 時刻と言語 > 言語と地域 から、対象言語の「文字認識」機能を追加してください。");
     }
+
+    /// <summary>
+    /// 指定言語のOCRパックが端末にインストール済みかどうかを、実際にエンジンを作らずに確認する。
+    /// 言語選択UIで、選択前に利用可否を示すために使う。
+    ///
+    /// LanguageTagの完全一致では判定できない。Windows側は言語パックを地域無しの主言語部分
+    /// (例:"ja")で登録することがあり、こちらが要求するのは地域付きのタグ(例:"ja-JP")のため、
+    /// 主言語部分(ハイフンの前)だけを比較する。
+    /// </summary>
+    public static bool IsLanguageAvailable(Language language) =>
+        OcrEngine.AvailableRecognizerLanguages.Any(l => PrimarySubtag(l.LanguageTag) == PrimarySubtag(language.LanguageTag));
+
+    private static string PrimarySubtag(string languageTag) =>
+        languageTag.Split('-')[0].ToLowerInvariant();
 
     public async Task<IReadOnlyList<DetectedTag>> RecognizeAsync(BitmapSource capturedFrame)
     {
         var softwareBitmap = await ConvertToSoftwareBitmapAsync(capturedFrame);
         var result = await _engine.RecognizeAsync(softwareBitmap);
 
-        var detected = new List<DetectedTag>();
+        var words = new List<DetectedTag>();
         foreach (var line in result.Lines)
         {
             foreach (var word in line.Words)
             {
-                detected.Add(new DetectedTag(
+                words.Add(new DetectedTag(
                     word.Text,
                     word.BoundingRect.X,
                     word.BoundingRect.Y,
@@ -48,16 +61,13 @@ public sealed class TagOcrService
             }
         }
 
-        return detected;
+        return OcrWordClusterer.Cluster(words);
     }
 
     private static async Task<Windows.Graphics.Imaging.SoftwareBitmap> ConvertToSoftwareBitmapAsync(BitmapSource source)
     {
-        var encoder = new PngBitmapEncoder();
-        encoder.Frames.Add(WpfBitmapFrame.Create(source));
-
         using var stream = new MemoryStream();
-        encoder.Save(stream);
+        BitmapPngCodec.Encode(source, stream);
         stream.Position = 0;
 
         using var randomAccessStream = new InMemoryRandomAccessStream();

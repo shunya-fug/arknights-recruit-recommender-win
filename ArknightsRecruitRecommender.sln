@@ -11,6 +11,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{EB7B611A
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArknightsRecruitRecommender.Tests", "tests\ArknightsRecruitRecommender.Tests\ArknightsRecruitRecommender.Tests.csproj", "{33FB232A-9B8E-4289-9709-1ADC9FF18F34}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{082F2797-AB8D-4BB6-BC07-1E98EA7612ED}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArknightsDataGenerator", "tools\ArknightsDataGenerator\ArknightsDataGenerator.csproj", "{DD8C6F25-364D-4C4D-9B67-8E829D230DF9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArknightsDataGenerator.Tests", "tools\ArknightsDataGenerator.Tests\ArknightsDataGenerator.Tests.csproj", "{444D0B94-F965-4697-8990-C43D9541C15C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -28,9 +34,19 @@ Global
 		{33FB232A-9B8E-4289-9709-1ADC9FF18F34}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{33FB232A-9B8E-4289-9709-1ADC9FF18F34}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{33FB232A-9B8E-4289-9709-1ADC9FF18F34}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DD8C6F25-364D-4C4D-9B67-8E829D230DF9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DD8C6F25-364D-4C4D-9B67-8E829D230DF9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DD8C6F25-364D-4C4D-9B67-8E829D230DF9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DD8C6F25-364D-4C4D-9B67-8E829D230DF9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{444D0B94-F965-4697-8990-C43D9541C15C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{444D0B94-F965-4697-8990-C43D9541C15C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{444D0B94-F965-4697-8990-C43D9541C15C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{444D0B94-F965-4697-8990-C43D9541C15C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{4B893ECB-6F1D-4EBF-8D0F-CCB8AD7B8C7D} = {9A893271-4C46-41FD-8D6E-B000F92CCF97}
 		{33FB232A-9B8E-4289-9709-1ADC9FF18F34} = {EB7B611A-9DAE-41ED-9550-5D1140495472}
+		{DD8C6F25-364D-4C4D-9B67-8E829D230DF9} = {082F2797-AB8D-4BB6-BC07-1E98EA7612ED}
+		{444D0B94-F965-4697-8990-C43D9541C15C} = {082F2797-AB8D-4BB6-BC07-1E98EA7612ED}
 	EndGlobalSection
 EndGlobal

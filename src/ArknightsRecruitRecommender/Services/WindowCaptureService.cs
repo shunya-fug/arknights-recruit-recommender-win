@@ -11,15 +11,16 @@ using Windows.Graphics.DirectX.Direct3D11;
 namespace ArknightsRecruitRecommender.Services;
 
 /// <summary>
-/// Captures still frames from the Arknights game window using Windows.Graphics.Capture.
-/// This API (rather than the classic BitBlt/PrintWindow) is required because the game window is
-/// rendered via DirectX/GPU compositing, which BitBlt cannot reliably read.
+/// アークナイツのゲームウィンドウから Windows.Graphics.Capture を使ってフレームを取得する。
+/// ゲームはDirectX/GPU描画のため、古典的なBitBlt/PrintWindowでは正しく読み取れず、このAPIが必須となる。
 ///
-/// The capture session (GraphicsCaptureItem/Direct3D11CaptureFramePool/GraphicsCaptureSession)
-/// is expensive to set up, so it is kept alive and reused across polling ticks via
-/// <see cref="EnsureSessionStarted"/> / <see cref="TryGetLatestFrameAsync"/> rather than being
-/// recreated every time a frame is needed. This is what makes frequent (e.g. 1 second interval)
-/// polling affordable.
+/// キャプチャセッション(GraphicsCaptureItem/Direct3D11CaptureFramePool/GraphicsCaptureSession)は
+/// 構築コストが高いため、<see cref="EnsureSessionStarted"/>で開始したセッションを使い回し、
+/// <see cref="TryGetLatestFrameAsync"/>で最新フレームを取得するだけにしている。これにより
+/// 1秒間隔のような高頻度なポーリングでもオーバーヘッドを抑えられる。
+///
+/// このクラス自体はスレッドセーフではない。呼び出し元(RecruitmentMonitorService)が
+/// 同時に複数スレッドから呼び出さないよう責任を持つ。
 /// </summary>
 public sealed class WindowCaptureService : IDisposable
 {
@@ -30,6 +31,7 @@ public sealed class WindowCaptureService : IDisposable
     private Direct3D11CaptureFramePool? _framePool;
     private GraphicsCaptureSession? _session;
     private IntPtr _activeHwnd;
+    private Windows.Graphics.SizeInt32 _framePoolSize;
 
     public WindowCaptureService()
     {
@@ -38,18 +40,21 @@ public sealed class WindowCaptureService : IDisposable
     }
 
     /// <summary>
-    /// Finds the main window of a running process by (partial, case-insensitive) title match.
-    /// Cheap (process/window enumeration only, no capture) - used every tick both to detect the
-    /// game starting and, when it stops returning a match, to detect the game closing.
+    /// 実行中プロセスから、プロセス名（実行ファイル名。拡張子無し）の完全一致でメインウィンドウを
+    /// 探す。ウィンドウタイトルでの一致は使わない。実機確認の結果、実際のウィンドウタイトルは
+    /// 表示言語によって変わる（例:日本語版では「アークナイツ」）一方、プロセス名(Arknights.exe)は
+    /// 言語に関わらず変わらないため。プロセス/ウィンドウの列挙のみでキャプチャを伴わない軽量な
+    /// 処理のため、ゲームの起動検知・終了検知（見つからなくなったら終了とみなす）の両方に
+    /// 毎ティック使う。
     /// </summary>
-    public static IntPtr? FindWindowByTitle(string titleContains)
+    public static IntPtr? FindWindowByProcessName(string processName)
     {
         foreach (var process in Process.GetProcesses())
         {
             try
             {
                 if (process.MainWindowHandle != IntPtr.Zero &&
-                    process.MainWindowTitle.Contains(titleContains, StringComparison.OrdinalIgnoreCase))
+                    string.Equals(process.ProcessName, processName, StringComparison.OrdinalIgnoreCase))
                 {
                     return process.MainWindowHandle;
                 }
@@ -64,9 +69,8 @@ public sealed class WindowCaptureService : IDisposable
     }
 
     /// <summary>
-    /// Starts (or keeps, if already running for this exact window) a capture session for hwnd.
-    /// Call this every tick before <see cref="TryGetLatestFrameAsync"/> - it is a no-op when the
-    /// session is already active for the same window.
+    /// 指定ウィンドウ向けのキャプチャセッションを開始する（既に同じウィンドウで起動済みなら何もしない）。
+    /// <see cref="TryGetLatestFrameAsync"/>を呼ぶ前に毎ティック呼び出すこと。
     /// </summary>
     public void EnsureSessionStarted(IntPtr hwnd)
     {
@@ -78,11 +82,12 @@ public sealed class WindowCaptureService : IDisposable
         StopSession();
 
         _item = GraphicsCaptureInterop.CreateItemForWindow(hwnd);
+        _framePoolSize = _item.Size;
         _framePool = Direct3D11CaptureFramePool.CreateFreeThreaded(
             _direct3DDevice,
             DirectXPixelFormat.B8G8R8A8UIntNormalized,
             numberOfBuffers: 2,
-            _item.Size);
+            _framePoolSize);
         _session = _framePool.CreateCaptureSession(_item);
         _session.IsCursorCaptureEnabled = false;
         _session.StartCapture();
@@ -90,8 +95,8 @@ public sealed class WindowCaptureService : IDisposable
     }
 
     /// <summary>
-    /// Tears down the active capture session (called once the game window is no longer found,
-    /// i.e. the game was closed) so GPU resources are not held while nothing is running.
+    /// 起動中のキャプチャセッションを破棄する（ゲームウィンドウが見つからなくなった＝終了した際に
+    /// 呼び出し、GPUリソースを解放するため）。
     /// </summary>
     public void StopSession()
     {
@@ -104,8 +109,13 @@ public sealed class WindowCaptureService : IDisposable
     }
 
     /// <summary>
-    /// Pulls the most recently captured frame from the active session without waiting for a new
-    /// one to arrive. Returns null if no session is active, or no frame has been produced yet.
+    /// 起動中のセッションから最新フレームを取得する（新しいフレームの到着を待たない）。
+    /// セッション未起動、またはまだフレームが1枚も生成されていない場合はnullを返す。
+    ///
+    /// ゲーム側でウィンドウサイズ（解像度設定）が変わると、以後届くフレームのContentSizeが
+    /// フレームプール作成時のサイズと一致しなくなる。これを検知せず放置すると、キャプチャ内容が
+    /// 引き伸ばされたり切れたりしたまま以後ずっと壊れるため、サイズが変わっていたらプールを
+    /// 作り直す(Recreate)。
     /// </summary>
     public async Task<BitmapSource?> TryGetLatestFrameAsync()
     {
@@ -118,6 +128,16 @@ public sealed class WindowCaptureService : IDisposable
         if (frame is null)
         {
             return null;
+        }
+
+        if (frame.ContentSize.Width != _framePoolSize.Width || frame.ContentSize.Height != _framePoolSize.Height)
+        {
+            _framePoolSize = frame.ContentSize;
+            _framePool.Recreate(
+                _direct3DDevice,
+                DirectXPixelFormat.B8G8R8A8UIntNormalized,
+                numberOfBuffers: 2,
+                _framePoolSize);
         }
 
         return await ConvertFrameToBitmapSourceAsync(frame);

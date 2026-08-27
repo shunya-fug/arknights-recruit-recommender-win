@@ -6,9 +6,9 @@ using ArknightsRecruitRecommender.Models;
 namespace ArknightsRecruitRecommender.Services;
 
 /// <summary>
-/// Writes the intermediate output of a single recruitment check (captured frame, raw OCR
-/// words, matched tags, combination results) to disk so it can be inspected after the fact -
-/// there is no way to watch the live game screen while debugging remotely.
+/// 手動チェック実行1回分の途中経過（キャプチャ画像、OCR生結果、マッチしたタグ、組み合わせ判定
+/// 結果）をディスクに書き出す。リモートでは実際のゲーム画面をリアルタイムに見る手段が無いため、
+/// 実行後にファイルを見て確認できるようにするためのもの。
 /// </summary>
 public static class DebugArtifactWriter
 {
@@ -28,17 +28,15 @@ public static class DebugArtifactWriter
 
     private static void SavePng(BitmapSource frame, string path)
     {
-        var encoder = new PngBitmapEncoder();
-        encoder.Frames.Add(BitmapFrame.Create(frame));
         using var stream = File.Create(path);
-        encoder.Save(stream);
+        BitmapPngCodec.Encode(frame, stream);
     }
 
     private static string BuildSummary(RecruitmentCheckResult result)
     {
         var sb = new StringBuilder();
 
-        sb.AppendLine("=== OCRで検出された生の単語 ===");
+        sb.AppendLine("=== OCRで検出された単語(同じ行の近接文字は結合済み) ===");
         foreach (var word in result.RawOcrWords)
         {
             sb.AppendLine($"  \"{word.Text}\" (x={word.X:F0}, y={word.Y:F0}, w={word.Width:F0}, h={word.Height:F0})");

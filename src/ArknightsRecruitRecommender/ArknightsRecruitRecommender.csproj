@@ -14,7 +14,9 @@
     <SelfContained>true</SelfContained>
     <PublishSingleFile>true</PublishSingleFile>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
-    <InvariantGlobalization>true</InvariantGlobalization>
+    <!-- GraphicsCaptureInterop.csの[GeneratedComInterface]が要求する -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -24,7 +26,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Data\operators.json">
+    <None Update="Data\*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <!-- タスクトレイのアイコン(TaskbarIcon.Icon)を実行時に読み込むためのコピー。
+         ApplicationIconはexe自体のアイコン(エクスプローラー表示用)埋め込みにしか使われず、
+         実行時にProcess.MainModuleから読み込む方式はdotnet <dll>起動時にdotnet.exe自体の
+         アイコンを拾ってしまうため、AppContext.BaseDirectoryから確実に読めるようこちらも必要。 -->
+    <None Update="Assets\AppIcon.ico">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
