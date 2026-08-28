@@ -39,12 +39,11 @@ public class TagMatcherTests
         Assert.Equal(new[] { "Guard" }, result);
     }
 
-    [Theory]
-    [InlineData("Guar")] // OCRが末尾を読み落とした(部分一致)
-    [InlineData("XGuardX")] // OCRが前後に余分な文字を拾った(逆方向の部分一致)
-    public void PartialContainment_IsMatched(string ocrText)
+    [Fact]
+    public void OcrTruncation_IsMatchedViaEditDistance()
     {
-        var detected = new[] { Word(ocrText) };
+        // OCRが末尾を読み落とした場合(編集距離1の欠落)は引き続き一致する。
+        var detected = new[] { Word("Guar") };
         var knownTags = new[] { "Guard" };
 
         var result = TagMatcher.MatchKnownTags(detected, knownTags);
@@ -58,6 +57,20 @@ public class TagMatcherTests
         // 公開求人画面以外の画面でOCRが拾った無関係な短い断片が、長いタグ名の部分文字列に
         // 偶然一致して誤検出を起こさないようにするための回帰テスト。
         var detected = new[] { Word("Gu") };
+        var knownTags = new[] { "Guard" };
+
+        var result = TagMatcher.MatchKnownTags(detected, knownTags);
+
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public void UnrelatedWordContainingATagName_IsNotMatched()
+    {
+        // 実機で確認した回帰テスト: 敵図鑑の「元素耐性」や、オペレーター詳細の
+        // 「防御力を400無視」のような、募集タグとは無関係な単語が既知タグ名を部分文字列として
+        // 含んでいるだけで誤って一致し、公開求人画面以外での誤通知を引き起こしていた。
+        var detected = new[] { Word("XGuardX") };
         var knownTags = new[] { "Guard" };
 
         var result = TagMatcher.MatchKnownTags(detected, knownTags);

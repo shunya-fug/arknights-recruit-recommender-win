@@ -2,8 +2,9 @@ namespace ArknightsRecruitRecommender.Services;
 
 /// <summary>
 /// Matches raw OCR output against the known tag vocabulary. OCR of the in-game font is not
-/// always exact (mis-read characters, split/merged words), so this uses simple normalized
-/// containment plus edit-distance tolerance rather than requiring an exact string match.
+/// always exact (mis-read characters, split/merged words), so this uses exact-match plus
+/// edit-distance tolerance rather than requiring a byte-for-byte match. Substring containment
+/// is intentionally NOT used as a match condition; see the comment at its removal site.
 /// </summary>
 public static class TagMatcher
 {
@@ -29,10 +30,16 @@ public static class TagMatcher
         {
             var normalizedTag = Normalize(tag);
             var isExactMatch = normalizedDetected.Contains(normalizedTag);
+            // normalizedText.Contains(normalizedTag)(検出テキストがタグ名を部分文字列として
+            // 含んでいればOKとする方向)は意図的に含めない。実機で、募集タグとは無関係な単語
+            // ―「元素耐性」「防御力を400無視」「遠距離術」のような、敵図鑑やオペレーター詳細
+            // 画面の説明文―がタグ名を部分文字列として含むだけで誤って一致し、公開求人画面以外
+            // での誤通知を引き起こすことを確認した。OCRのクラスタリング(OcrWordClusterer)で
+            // ラベル単位の文字列に復元してから照合しているため、前後にノイズが混入するケースは
+            // 編集距離側で十分カバーできる。
             var isFuzzyMatch = !isExactMatch && normalizedDetected.Any(normalizedText =>
                 !exactlyMatchedTexts.Contains(normalizedText) &&
-                (normalizedText.Contains(normalizedTag)
-                    || LevenshteinDistance(normalizedText, normalizedTag) <= maxEditDistance));
+                LevenshteinDistance(normalizedText, normalizedTag) <= maxEditDistance);
 
             if (isExactMatch || isFuzzyMatch)
             {
