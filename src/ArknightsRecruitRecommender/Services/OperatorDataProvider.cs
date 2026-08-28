@@ -1,45 +1,54 @@
 using System.IO;
+using System.Reflection;
 using System.Text.Json;
 using ArknightsRecruitRecommender.Models;
 
 namespace ArknightsRecruitRecommender.Services;
 
+/// <summary>
+/// オペレーター/タグデータ(Data/operators.{locale}.json)を読み込む。単一exe配布時に
+/// Dataフォルダを別途持ち歩く必要が無いよう、csproj側でアセンブリの埋め込みリソース
+/// (論理名 "Data.operators.{locale}.json")として組み込んでいるため、ファイルパスではなく
+/// アセンブリのリソースストリームから読み込む。
+/// </summary>
 public sealed class OperatorDataProvider
 {
-    private readonly string _dataFilePath;
+    private const string ResourcePrefix = "Data.operators.";
+    private const string ResourceSuffix = ".json";
 
-    public OperatorDataProvider(string? dataFilePath = null, string locale = "ja-JP")
+    private readonly string _locale;
+
+    public OperatorDataProvider(string locale = "ja-JP")
     {
-        _dataFilePath = dataFilePath
-            ?? Path.Combine(AppContext.BaseDirectory, "Data", $"operators.{locale}.json");
+        _locale = locale;
     }
 
     public IReadOnlyList<OperatorInfo> Load()
     {
-        var json = File.ReadAllText(_dataFilePath);
-        var operators = JsonSerializer.Deserialize<List<OperatorInfo>>(json, JsonOptions)
-            ?? throw new InvalidDataException($"Failed to parse operator data from {_dataFilePath}");
-        return operators;
+        var resourceName = ResourcePrefix + _locale + ResourceSuffix;
+        var assembly = Assembly.GetExecutingAssembly();
+        using var stream = assembly.GetManifestResourceStream(resourceName)
+            ?? throw new InvalidDataException($"埋め込みリソース {resourceName} が見つかりません。");
+
+        return JsonSerializer.Deserialize<List<OperatorInfo>>(stream, JsonOptions)
+            ?? throw new InvalidDataException($"オペレーターデータ({resourceName})の解析に失敗しました。");
     }
 
     public static IReadOnlyList<string> GetAllKnownTags(IReadOnlyList<OperatorInfo> operators) =>
         operators.SelectMany(o => o.Tags).Distinct().OrderBy(t => t).ToList();
 
     /// <summary>
-    /// Data/operators.{locale}.json という命名のファイルをDataフォルダから走査し、
-    /// 現在選択可能なロケール一覧を返す。新しい言語のデータファイルを追加するだけで
-    /// 選択肢に反映されるようにするため、ロケール一覧をハードコードしない。
+    /// 埋め込み済みのoperators.{locale}.jsonリソース一覧からロケール一覧を返す。
+    /// 新しい言語のデータファイルを追加するだけで選択肢に反映されるようにするため、
+    /// ロケール一覧をハードコードしない。
     /// </summary>
     public static IReadOnlyList<string> GetAvailableLocales()
     {
-        var dataDirectory = Path.Combine(AppContext.BaseDirectory, "Data");
-        if (!Directory.Exists(dataDirectory))
-        {
-            return Array.Empty<string>();
-        }
-
-        return Directory.GetFiles(dataDirectory, "operators.*.json")
-            .Select(path => Path.GetFileNameWithoutExtension(path)["operators.".Length..])
+        var assembly = Assembly.GetExecutingAssembly();
+        return assembly.GetManifestResourceNames()
+            .Where(name => name.StartsWith(ResourcePrefix, StringComparison.Ordinal)
+                && name.EndsWith(ResourceSuffix, StringComparison.Ordinal))
+            .Select(name => name[ResourcePrefix.Length..^ResourceSuffix.Length])
             .OrderBy(locale => locale, StringComparer.Ordinal)
             .ToList();
     }

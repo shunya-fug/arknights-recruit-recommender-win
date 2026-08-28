@@ -17,6 +17,8 @@
     <!-- GraphicsCaptureInterop.csの[GeneratedComInterface]が要求する -->
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
+    <!-- pdbを別ファイルではなくexe自体に埋め込み、単一exe配布での取り回しをよくする -->
+    <DebugType>embedded</DebugType>
   </PropertyGroup>
 
   <ItemGroup>
@@ -26,9 +28,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Data\*.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <!-- オペレーター/タグデータを埋め込みリソース化する(論理名 "Data.operators.{locale}.json")。
+         単一exe配布時にDataフォルダを別途持ち歩かなくて済むようにするため。読み込み側は
+         OperatorDataProvider参照。SDKが暗黙的にNoneとして拾ってしまう分を明示的に除去してから
+         EmbeddedResourceとして追加する必要がある。また、ファイル名の"en-US"/"ja-JP"部分が
+         カルチャ名として誤認識され、ローカライズ用サテライトアセンブリ(en-US\/ja-JP\配下の
+         別dll)に分離されてしまいメインdllから読めなくなる問題があったため、WithCulture="false"
+         で明示的に無効化している(実機で確認済み)。 -->
+    <None Remove="Data\*.json" />
+    <EmbeddedResource Include="Data\*.json" LogicalName="Data.%(Filename)%(Extension)" WithCulture="false" />
     <!-- タスクトレイのアイコン(TaskbarIcon.Icon)を実行時に読み込むために埋め込みリソース化する。
          同じファイルをApplicationIcon(exe自体のアイコン、エクスプローラー表示用)にも指定して
          いるが、ApplicationIconに指定したファイルはdotnet publish(単一ファイル発行)時に
