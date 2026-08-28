@@ -253,14 +253,18 @@ public partial class App : Application
     }
 
     /// <summary>
-    /// Assets/AppIcon.icoを読み込む。Process.MainModuleからexe自体のアイコンを拾う方式だと
-    /// dotnet &lt;dll&gt; 起動時にdotnet.exeのアイコンを拾ってしまうため、起動方法によらず
-    /// 確実に自前のアイコンを読めるようAppContext.BaseDirectory基準でファイルを直接読む。
+    /// Assets/AppIcon.icoを埋め込みリソース(LogicalName="AppIcon.ico")として読み込む。
+    /// 実行ファイル横のファイルパスに依存する方式(AppContext.BaseDirectory等)は、
+    /// dotnet publish(単一ファイル発行)時にApplicationIcon指定ファイルが出力先へコピー
+    /// されず実機でDirectoryNotFoundExceptionにより起動直後にクラッシュする不具合が
+    /// あったため、起動方法・発行方法によらず確実に読めるアセンブリ埋め込みリソースに変更した。
     /// </summary>
     private static Icon LoadTrayIcon()
     {
-        var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "AppIcon.ico");
-        return new Icon(iconPath);
+        var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+        using var stream = assembly.GetManifestResourceStream("AppIcon.ico")
+            ?? throw new InvalidOperationException("埋め込みリソース AppIcon.ico が見つかりません。");
+        return new Icon(stream);
     }
 
     protected override void OnExit(ExitEventArgs e)
