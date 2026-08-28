@@ -63,61 +63,20 @@
 - **言語**: OCR・オペレーターデータで使用する言語を切り替える（変更にはアプリの再起動が必要）
 - **終了**: アプリを終了する
 
-## ⚠️ 既知の制約・要検証事項
+## ⚠️ 既知の制約
 
-1. **`Data/operators.ja-JP.json` は日本版(Yostar)の実データ（156件）です。**
-   `gacha_table.json`の`recruitDetail`フィールド（ゲーム内の「募集可能一覧」表示に使われている、
-   レア度ごとに区切られたテキスト。これが公開求人プールの唯一の正確な一次情報源）から名簿を機械的に
-   抽出し、`character_table.json`（職業・位置・特性タグ、`profession`/`position`/`tagList`）と
-   `gachaTags`/`specialTagRarityTable`（★5=「エリート」、★6=「上級エリート」の特別タグ）を
-   突き合わせて生成した。人材募集で入手可能なオペレーター全員ではなく、運営が求人プールに個別登録
-   した閉じた名簿であるため、`character_table.json`の`itemObtainApproach`だけからは機械的に
-   判定できない（この条件だけだと290件ヒットし、実際の3倍近くになる）。
-   データソースは[Kengxxiao/ArknightsGameData_YoStar](https://github.com/Kengxxiao/ArknightsGameData_YoStar)
-   ではない（2025年11月13日を最後に更新が止まっているため）。代わりに
-   [ArknightsAssets/ArknightsGamedata](https://github.com/ArknightsAssets/ArknightsGamedata)
-   （CN/EN/JP/KR/TW/biliの全リージョンを1リポジトリで自動取得・継続更新しているプロジェクト。
-   2026年8月時点で日次〜週次更新が確認できる）の`jp/gamedata/excel/`配下を使用している。
-   本国(CN)版データ（`cn/gamedata/excel/`）も同じリポジトリ内にあり同様に現役更新されているので、
-   仮にJP側が将来止まった場合はCN版の`recruitDetail`とキャラクターIDで日本語版
-   `character_table.json`を突き合わせる形を代替に検討すること。
-   `Data/operators.en-US.json`（グローバル版、同じく156件）も同じツールを
-   `--gacha-source`/`--character-source`をEN版のURLに差し替えて生成したもの。生成時に
-   character_table.json側の名前が前後を単引用符で囲われている（例:`'Justice Knight'`。
-   EN版で38件確認）ケースが見つかり、`recruitDetail`側は引用符無しのため突き合わせに失敗する
-   問題があったので、`OperatorDatasetBuilder`で単引用符を正規化してから照合するよう対応済み。
-   「ア」（6★特殊タイプ、遠距離、支援/火力タグ）は一文字だが実在するオペレーター名（データ誤りではない）。
-   「カーディ」（★3、重装タイプ、近距離、防御）はCN/JP双方の`recruitDetail`（現在・過去とも）に
-   一度も登場しておらず、公開求人プール対象外と判断して含めていない（一部サイトの掲載は誤りと判断）。
-   [アークナイツ攻略Wiki](https://arknights.wikiru.jp/?%E5%85%AC%E9%96%8B%E6%B1%82%E4%BA%BA)
-   （コミュニティによる継続更新、2026/07/28更新）の★6一覧33名と本データの★6一覧33名が完全一致する
-   ことを確認済み。また同wikiに明記されている「公開求人対象外（中堅スカウト限定）」の6名
-   （アンジェリーナ、エイヤフィヤトラ、スカイフレア、ソラ、フランカ、ラップランド）が本データに
-   含まれていないことも確認済み。
-   `OperatorDataProvider`は`locale`引数（既定`ja-JP`）で`Data/operators.{locale}.json`を読むため、
-   将来的に他言語版を追加する場合は同じ形式のファイルを追加するだけでよい。
-2. **Global版クライアント（EN/JP/KR/繁体中国語をまとめた、日本以外向けのサーバー）は未検証。**
-   日本版とは別クライアント・別サーバーのため、実際の画面に対するOCR・タグ照合の動作確認が
-   できていない（`en-US`用データは生成済み）。
-3. **実機（実際に起動中のアークナイツ）で一通り動作確認済み。** ウィンドウ検出は
-   `WindowCaptureService.FindWindowByProcessName`（プロセス名`Arknights`の完全一致、表示言語に
-   依存しない）で行う。日本語フォントはOCRで1文字ずつバラバラの単語として検出されることがあるため、
-   `OcrWordClusterer`で近接した文字を結合してから`TagMatcher`のあいまい一致（既定で編集距離1まで
-   許容）にかけている。`RecruitmentMonitorService.MinMatchedTagsForRecruitmentScreen`の閾値含め、
-   実際のフォント描画・OCR精度を見ながら継続的な調整が必要な箇所ではある。
-4. **解像度: 1600×900以上で動作確認済み。** 実機で複数解像度（2564×1487前後、1920×1080、
-   1600×900）を試し、いずれも正常にタグ検出できることを確認した。一方、ゲーム内の最低画質設定
-   （実測644×527）ではウィンドウ自体が非常に小さくなり、タグ文字の描画が高さ8〜9px程度まで
-   縮小されてOCRが全滅する（例:「医療タイプ」→「第第タイノ」）ことを確認した。これは実装の不具合
-   ではなく、文字が物理的に小さすぎてOCRの実用限界を下回るという、スクリーンキャプチャ+OCR方式
-   そのものの本質的な限界。1600×900と644×527の間のどこかに閾値があるはずだが、正確な境界線は
-   未特定。極端に低い解像度設定は避けること。
-   なお、解像度に関わらず再現する既知のOCR精度問題として、「治療」タグの2文字が
-   「ム」「ロ」のような無関係な断片に誤読され続けるケースを複数解像度で確認している
-   （フォント描画がOCRにとって読み取りづらい既知の限界とみられ、解像度非依存の問題）。
+- **日本版(Yostar)の実データ（156件）を使用。** データの出典・検証方法は
+  [オペレーターデータの自動更新](#オペレーターデータの自動更新)を参照。
+- **Global版クライアントは未検証**（日本版とは別クライアント・別サーバーのため）。
+  [#3](https://github.com/shunya-fug/arknights-recruit-recommender-win/issues/3)
+- **「治療」タグがOCRで稀に誤読される**（解像度非依存の既知のOCR限界）。
+  [#4](https://github.com/shunya-fug/arknights-recruit-recommender-win/issues/4)
+- **極端に低い解像度（ゲーム内最低画質設定等）ではタグ検出が完全に失敗する。**
+  1600×900以上での動作を推奨。
+  [#5](https://github.com/shunya-fug/arknights-recruit-recommender-win/issues/5)
 
-未対応の不具合・改善要望は[Issues](https://github.com/shunya-fug/arknights-recruit-recommender-win/issues)
-で管理している。
+その他の未対応の不具合・改善要望は
+[Issues](https://github.com/shunya-fug/arknights-recruit-recommender-win/issues)で管理している。
 
 ---
 
@@ -218,10 +177,17 @@ tools/ArknightsDataGenerator.Tests/  上記の単体テスト
 ### オペレーターデータの自動更新
 
 `tools/ArknightsDataGenerator`は、[ArknightsAssets/ArknightsGamedata](https://github.com/ArknightsAssets/ArknightsGamedata)
-から最新の`gacha_table.json`/`character_table.json`を取得し、`Data/operators.ja-JP.json`を
-再生成するCLIツール。手動で行った抽出手順（recruitDetailのパース→character_table.jsonとの
-突き合わせ→タグ構築）をそのままコード化したもので、生成結果は手動生成版と全156件で完全一致することを
-確認済み。
+（CN/EN/JP/KR/TW/biliの全リージョンを1リポジトリで自動取得・継続更新しているプロジェクト）から
+最新の`gacha_table.json`/`character_table.json`を取得し、`Data/operators.{locale}.json`を
+再生成するCLIツール。[Kengxxiao/ArknightsGameData_YoStar](https://github.com/Kengxxiao/ArknightsGameData_YoStar)
+は更新が止まっているため使用していない。
+
+`recruitDetail`フィールド（ゲーム内の「募集可能一覧」表示に使われている、公開求人プールの
+唯一の正確な一次情報源）から名簿を抽出し、`character_table.json`（職業・位置・特性タグ）と
+突き合わせて生成している（`itemObtainApproach`だけでは公開求人対象外のオペレーターも
+含まれてしまうため使えない）。生成結果は、日本版156件について
+[アークナイツ攻略Wiki](https://arknights.wikiru.jp/?%E5%85%AC%E9%96%8B%E6%B1%82%E4%BA%BA)の
+掲載内容と突き合わせて確認済み。`en-US`（Global版、同じく156件）も同じツールで生成している。
 
 想定外のデータ（未知のprofession値、recruitDetailとcharacter_table.jsonのレアリティ食い違い、
 名前が解決できないケースなど）を検知した場合は、出力を書き込まずにエラー終了する
