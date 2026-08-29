@@ -1,5 +1,6 @@
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using ArknightsRecruitRecommender.Models;
 
 namespace ArknightsRecruitRecommender.Services;
@@ -16,6 +17,14 @@ public static class AppSettingsStore
         "ArknightsRecruitRecommender",
         "settings.json");
 
+    // 列挙型(NotificationPosition)を数値ではなく名前で保存し、設定ファイルを目視確認・
+    // 手動編集しやすくする。
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        WriteIndented = true,
+        Converters = { new JsonStringEnumConverter() },
+    };
+
     public static AppSettings Load()
     {
         try
@@ -26,7 +35,7 @@ public static class AppSettingsStore
             }
 
             var json = File.ReadAllText(SettingsFilePath);
-            return JsonSerializer.Deserialize<AppSettings>(json) ?? AppSettings.Default;
+            return JsonSerializer.Deserialize<AppSettings>(json, JsonOptions) ?? AppSettings.Default;
         }
         catch
         {
@@ -39,7 +48,7 @@ public static class AppSettingsStore
         var directory = Path.GetDirectoryName(SettingsFilePath)!;
         Directory.CreateDirectory(directory);
 
-        var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
+        var json = JsonSerializer.Serialize(settings, JsonOptions);
         File.WriteAllText(SettingsFilePath, json);
     }
 }
