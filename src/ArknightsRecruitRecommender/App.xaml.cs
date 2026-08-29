@@ -44,7 +44,7 @@ public partial class App : Application
         _trayIcon.ForceCreate();
         DiagnosticLog.Write("[起動] トレイアイコン作成完了");
 
-        _notificationWindow = new NotificationWindow();
+        _notificationWindow = new NotificationWindow(_settings.NotificationPosition);
 
         // StartMonitor()はD3D11デバイス・OCRエンジンの作成を含み、実機計測で約1秒かかる。
         // OnStartup内で同期的に呼ぶと、ディスパッチャのメッセージループが動き出すまでの間
@@ -82,6 +82,7 @@ public partial class App : Application
         menu.Items.Add(manualCheckItem);
 
         menu.Items.Add(BuildLanguageMenuItem());
+        menu.Items.Add(BuildNotificationPositionMenuItem());
 
         menu.Items.Add(new System.Windows.Controls.Separator());
 
@@ -185,6 +186,59 @@ public partial class App : Application
         {
             item.IsChecked = itemLocale == locale;
         }
+    }
+
+    private static readonly (NotificationPosition Position, string Label)[] NotificationPositionOptions =
+    {
+        (NotificationPosition.TopLeft, "左上"),
+        (NotificationPosition.TopRight, "右上"),
+        (NotificationPosition.BottomLeft, "左下"),
+        (NotificationPosition.BottomRight, "右下"),
+    };
+
+    private readonly List<(NotificationPosition Position, System.Windows.Controls.MenuItem Item)> _positionMenuItems = new();
+
+    /// <summary>
+    /// 「通知の表示位置」サブメニュー。言語設定と異なりOCR等の再初期化を伴わないため、
+    /// 選択直後に表示中の通知ウィンドウへ即時反映し、アプリ再起動は不要にする(Issue #11)。
+    /// </summary>
+    private System.Windows.Controls.MenuItem BuildNotificationPositionMenuItem()
+    {
+        var positionMenu = new System.Windows.Controls.MenuItem { Header = "通知の表示位置" };
+        _positionMenuItems.Clear();
+
+        foreach (var (position, label) in NotificationPositionOptions)
+        {
+            var item = new System.Windows.Controls.MenuItem
+            {
+                Header = label,
+                IsCheckable = true,
+                IsChecked = position == _settings.NotificationPosition,
+            };
+            item.Click += (_, _) => OnNotificationPositionSelected(position);
+            _positionMenuItems.Add((position, item));
+            positionMenu.Items.Add(item);
+        }
+
+        return positionMenu;
+    }
+
+    private void OnNotificationPositionSelected(NotificationPosition position)
+    {
+        if (position == _settings.NotificationPosition)
+        {
+            return;
+        }
+
+        _settings = _settings with { NotificationPosition = position };
+        AppSettingsStore.Save(_settings);
+
+        foreach (var (itemPosition, item) in _positionMenuItems)
+        {
+            item.IsChecked = itemPosition == position;
+        }
+
+        _notificationWindow?.SetPosition(position);
     }
 
     private async Task RestartApplicationAsync()

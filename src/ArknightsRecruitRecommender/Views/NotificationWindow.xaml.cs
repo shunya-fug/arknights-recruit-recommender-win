@@ -5,13 +5,49 @@ namespace ArknightsRecruitRecommender.Views;
 
 public partial class NotificationWindow : Window
 {
-    public NotificationWindow()
+    // ウィンドウ端からの余白(ピクセル)。4隅どのプリセットでも揃った見た目にするため共通で使う。
+    private const double ScreenMargin = 16;
+
+    // ウィンドウはSizeToContent="WidthAndHeight"で、コンストラクタ時点ではActualWidth/Height
+    // がまだ0(未レイアウト)のため、初回配置はこの概算値で行う。実際のサイズが確定した時点で
+    // SizeChangedにより正確な位置へ補正される。
+    private const double InitialWidthEstimate = 380;
+    private const double InitialHeightEstimate = 200;
+
+    private NotificationPosition _position;
+
+    public NotificationWindow(NotificationPosition position)
     {
         InitializeComponent();
 
+        _position = position;
+        SizeChanged += (_, _) => ApplyPosition();
+        ApplyPosition();
+    }
+
+    /// <summary>
+    /// 表示位置プリセットを変更し、即座に反映する(トレイメニューからの変更を再起動不要で
+    /// 反映するため)。
+    /// </summary>
+    public void SetPosition(NotificationPosition position)
+    {
+        _position = position;
+        ApplyPosition();
+    }
+
+    private void ApplyPosition()
+    {
         var workArea = SystemParameters.WorkArea;
-        Left = workArea.Right - 380;
-        Top = workArea.Bottom - 200;
+        var width = ActualWidth > 0 ? ActualWidth : InitialWidthEstimate;
+        var height = ActualHeight > 0 ? ActualHeight : InitialHeightEstimate;
+
+        Left = _position is NotificationPosition.TopLeft or NotificationPosition.BottomLeft
+            ? workArea.Left + ScreenMargin
+            : workArea.Right - width - ScreenMargin;
+
+        Top = _position is NotificationPosition.TopLeft or NotificationPosition.TopRight
+            ? workArea.Top + ScreenMargin
+            : workArea.Bottom - height - ScreenMargin;
     }
 
     public void ShowResults(IReadOnlyList<CombinationResult> results)
