@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Windows;
+using System.Windows.Threading;
 using ArknightsRecruitRecommender.Models;
 using ArknightsRecruitRecommender.Services;
 using ArknightsRecruitRecommender.Views;
@@ -41,10 +42,20 @@ public partial class App : Application
         _trayIcon.Icon = LoadTrayIcon();
         _trayIcon.ContextMenu = BuildContextMenu();
         _trayIcon.ForceCreate();
+        DiagnosticLog.Write("[起動] トレイアイコン作成完了");
 
         _notificationWindow = new NotificationWindow();
 
-        StartMonitor();
+        // StartMonitor()はD3D11デバイス・OCRエンジンの作成を含み、実機計測で約1秒かかる。
+        // OnStartup内で同期的に呼ぶと、ディスパッチャのメッセージループが動き出すまでの間
+        // Windowsが起動中カーソル(ローディング表示)を出し続けてしまう。トレイアイコンの
+        // 表示を優先し、メッセージループが動き出した直後に非同期で開始することで、
+        // 起動時のカーソル表示を短縮する。
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            StartMonitor();
+            DiagnosticLog.Write("[起動] 監視サービス初期化完了(D3D11デバイス・OCRエンジン作成を含む)");
+        }), DispatcherPriority.Background);
     }
 
     /// <summary>
