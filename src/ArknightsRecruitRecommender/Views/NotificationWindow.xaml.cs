@@ -50,10 +50,16 @@ public partial class NotificationWindow : Window
             : workArea.Bottom - height - ScreenMargin;
     }
 
+    /// <summary>
+    /// おすすめの組み合わせが0件の場合も明示的に「無し」と表示する。判定中(まだ何も
+    /// 表示されていない)状態と区別できるようにするため。
+    /// </summary>
     public void ShowResults(IReadOnlyList<CombinationResult> results)
     {
         TitleText.Text = "★4以上 確定タグの組み合わせ";
-        ResultsList.ItemsSource = results.Select(FormatCombination);
+        ResultsList.ItemsSource = results.Count == 0
+            ? new[] { "おすすめの組み合わせはありません" }
+            : results.Select(FormatCombination);
         Show();
     }
 
