@@ -8,7 +8,13 @@ public sealed class RecruitmentMonitorService : IDisposable
 {
     // 実機確認済み: PC版アークナイツの実行ファイル名(表示言語に関わらず共通)。
     private const string GameProcessName = "Arknights";
-    private static readonly TimeSpan PollInterval = TimeSpan.FromMilliseconds(200);
+    // 実機計測(Issue #6調査): capture+OCR+判定の合計処理時間は通常190〜230ms程度(稀に
+    // 250ms超)。以前は200msだったが、これだと1ティックの処理がポーリング間隔を超えてしまい、
+    // 次のティックが(_checkGateが空くまで)スキップされ続け、実質的なポーリング間隔が
+    // 意図した200msの倍(約400ms)まで悪化していた。実測の処理時間に対して余裕を持たせるため
+    // 300msに緩めた(OCR自体を縮小して高速化する案もあったが、精度とのトレードオフになる
+    // ため見送り、素直に間隔を実測値に合わせる方を選んだ)。
+    private static readonly TimeSpan PollInterval = TimeSpan.FromMilliseconds(300);
     private static readonly TimeSpan FirstFrameTimeout = TimeSpan.FromMilliseconds(100);
 
     // 公開求人のタグ選択画面かどうかを判定するための閾値。実機のスクリーンショットで確認した
@@ -39,7 +45,7 @@ public sealed class RecruitmentMonitorService : IDisposable
     // 「おすすめ無し」を即座に確定させると、その1ティック後に本来のおすすめが現れて
     // 表示が反転してしまう。「おすすめ有り」は即座に表示する一方(応答性を優先)、
     // 「おすすめ無し」だけは同じタグの組み合わせが連続2ティック観測されるまで確定を待つ
-    // (最大でもPollInterval1回分=200msの遅延で済む)。
+    // (最大でもPollInterval1回分の遅延で済む)。
     private IReadOnlyList<string>? _pendingNoRecommendationTags;
 
     /// <summary>
