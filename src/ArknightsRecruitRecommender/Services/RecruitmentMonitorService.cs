@@ -35,7 +35,19 @@ public sealed class RecruitmentMonitorService : IDisposable
     private IReadOnlyList<string>? _lastVisibleTags;
     private bool _isOnRecruitmentScreen;
 
-    public event Action<IReadOnlyList<CombinationResult>>? GoodCombinationsFound;
+    // OCRは1ティック目だけタグを1個見落とし、次のティックで揃うことがある(実績あり)。
+    // 「おすすめ無し」を即座に確定させると、その1ティック後に本来のおすすめが現れて
+    // 表示が反転してしまう。「おすすめ有り」は即座に表示する一方(応答性を優先)、
+    // 「おすすめ無し」だけは同じタグの組み合わせが連続2ティック観測されるまで確定を待つ
+    // (最大でもPollInterval1回分=200msの遅延で済む)。
+    private IReadOnlyList<string>? _pendingNoRecommendationTags;
+
+    /// <summary>
+    /// 公開求人画面で検出タグの組み合わせが変わるたびに発火する(おすすめの組み合わせが
+    /// 無い場合も含む)。「おすすめ無し」を判定中(まだOCR結果が確定していない)と区別できる
+    /// よう、購読側は空リストの場合も「該当なし」として明示的に表示すること。
+    /// </summary>
+    public event Action<IReadOnlyList<CombinationResult>>? RecommendationsUpdated;
 
     /// <summary>
     /// 公開求人のタグ選択画面を検出できなくなった(＝タグ一致数が閾値未満になった、または
@@ -156,6 +168,7 @@ public sealed class RecruitmentMonitorService : IDisposable
 
                 _isOnRecruitmentScreen = false;
                 _lastVisibleTags = null;
+                _pendingNoRecommendationTags = null;
                 return;
             }
 
@@ -167,12 +180,31 @@ public sealed class RecruitmentMonitorService : IDisposable
                 return;
             }
 
-            _lastVisibleTags = result!.MatchedTags;
+            // おすすめが0件の場合も含めて必ず発火する。0件を握りつぶすと、「まだ判定中で
+            // 何も表示されていない」のか「判定済みでおすすめが無い」のかを画面から区別できず、
+            // また直前に別のタグの組み合わせでおすすめが表示されていた場合、タグが変わって
+            // おすすめが無くなった後もその古い通知が消えずに残ってしまう(実際に発生していた不具合)。
+            var goodCombinations = result!.Combinations.Where(r => r.IsRecommended).ToList();
 
-            var goodCombinations = result.Combinations.Where(r => r.IsRecommended).ToList();
             if (goodCombinations.Count > 0)
             {
-                GoodCombinationsFound?.Invoke(goodCombinations);
+                _lastVisibleTags = result.MatchedTags;
+                _pendingNoRecommendationTags = null;
+                RecommendationsUpdated?.Invoke(goodCombinations);
+                return;
+            }
+
+            // 「おすすめ無し」は即確定させず、同じタグの組み合わせがもう1ティック続いた
+            // ことを確認してから確定する(上のフィールド宣言のコメント参照)。
+            if (_pendingNoRecommendationTags is not null && _pendingNoRecommendationTags.SequenceEqual(result.MatchedTags))
+            {
+                _lastVisibleTags = result.MatchedTags;
+                _pendingNoRecommendationTags = null;
+                RecommendationsUpdated?.Invoke(goodCombinations);
+            }
+            else
+            {
+                _pendingNoRecommendationTags = result.MatchedTags;
             }
         }
         catch

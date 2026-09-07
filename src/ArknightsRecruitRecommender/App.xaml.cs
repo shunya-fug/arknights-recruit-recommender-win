@@ -67,7 +67,7 @@ public partial class App : Application
     private void StartMonitor()
     {
         _monitor = new RecruitmentMonitorService(_settings.Locale);
-        _monitor.GoodCombinationsFound += results =>
+        _monitor.RecommendationsUpdated += results =>
             Dispatcher.Invoke(() => _notificationWindow!.ShowResults(results));
         _monitor.RecruitmentScreenLost += () =>
             Dispatcher.Invoke(() => _notificationWindow!.Hide());

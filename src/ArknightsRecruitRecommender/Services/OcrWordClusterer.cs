@@ -25,6 +25,12 @@ public static class OcrWordClusterer
     /// 一度に並べ替えるとこのブレだけで行の途中に割り込んでしまい、読み順が崩れる。
     /// 各行の基準Yはその行で最初に見つかった単語のYに固定する(直前の単語との差分を
     /// 順番に見ていく実装だと、緩やかなドリフトが連鎖して離れた行まで結合してしまうため)。
+    ///
+    /// 許容誤差は候補の単語自身の高さではなく、その行の基準となった単語の高さを使う。
+    /// 「エリート」の「ー」のように、文字によっては通常の文字(高さ約34px)よりはるかに
+    /// 小さいバウンディングボックス(実機観測: 高さ5px)で検出されることがあり、候補自身の
+    /// 高さを基準にすると許容誤差が数px未満まで縮んで同じ行なのに弾かれてしまう
+    /// (実機で「エリート」タグが検出できない不具合として確認済み)。
     /// </summary>
     private static List<List<DetectedTag>> GroupIntoRows(IReadOnlyList<DetectedTag> words)
     {
@@ -32,10 +38,11 @@ public static class OcrWordClusterer
         var rows = new List<List<DetectedTag>>();
         List<DetectedTag>? currentRow = null;
         double rowAnchorY = 0;
+        double rowAnchorHeight = 0;
 
         foreach (var word in sortedByY)
         {
-            if (currentRow is not null && Math.Abs(word.Y - rowAnchorY) <= word.Height * 0.5)
+            if (currentRow is not null && Math.Abs(word.Y - rowAnchorY) <= rowAnchorHeight * 0.5)
             {
                 currentRow.Add(word);
             }
@@ -44,6 +51,7 @@ public static class OcrWordClusterer
                 currentRow = new List<DetectedTag> { word };
                 rows.Add(currentRow);
                 rowAnchorY = word.Y;
+                rowAnchorHeight = word.Height;
             }
         }
 

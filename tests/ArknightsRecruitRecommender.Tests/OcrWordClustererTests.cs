@@ -83,6 +83,31 @@ public class OcrWordClustererTests
         Assert.Empty(runs);
     }
 
+    /// <summary>
+    /// 実機の手動チェックのdebug-outputで観測: 「エリート」タグが「工リ」「ー」「ト」の
+    /// 3フラグメントに分割され、うち「ー」だけ高さ5px(他の文字は約33〜37px)という極端に
+    /// 小さいバウンディングボックスで検出された。行のグルーピングが候補自身の高さを
+    /// 許容誤差に使っていたため、「ー」だけ別の行として弾かれ、タグが未検出になっていた
+    /// (「工」はエリートの「エ」とよく似た字形のためOCRの1文字誤読で、既知タグとの照合は
+    /// 編集距離1のあいまい一致で吸収する想定。ここでは行のグルーピング自体を検証する)。
+    /// </summary>
+    [Fact]
+    public void FragmentWithAbnormallySmallBoundingBox_IsMergedIntoSameRow()
+    {
+        var words = new[]
+        {
+            Word("前衛タイプ", 844, 788, 185, 37),
+            Word("特殊タイプ", 1145, 788, 184, 37),
+            Word("工リ", 1465, 792, 64, 33),
+            Word("ト", 1585, 790, 22, 36),
+            Word("ー", 1539, 805, 33, 5),
+        };
+
+        var runs = OcrWordClusterer.Cluster(words);
+
+        Assert.Equal(new[] { "前衛タイプ", "特殊タイプ", "工リート" }, runs.Select(r => r.Text));
+    }
+
     [Fact]
     public void MergedRun_BoundingBoxIsUnionOfWords()
     {
