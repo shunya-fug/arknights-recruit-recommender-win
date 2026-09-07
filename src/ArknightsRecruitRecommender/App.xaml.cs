@@ -45,6 +45,7 @@ public partial class App : Application
         DiagnosticLog.Write("[起動] トレイアイコン作成完了");
 
         _notificationWindow = new NotificationWindow(_settings.NotificationPosition);
+        _notificationWindow.SetCompactDisplay(_settings.CompactNotificationDisplay);
 
         // StartMonitor()はD3D11デバイス・OCRエンジンの作成を含み、実機計測で約1秒かかる。
         // OnStartup内で同期的に呼ぶと、ディスパッチャのメッセージループが動き出すまでの間
@@ -83,6 +84,7 @@ public partial class App : Application
 
         menu.Items.Add(BuildLanguageMenuItem());
         menu.Items.Add(BuildNotificationPositionMenuItem());
+        menu.Items.Add(BuildCompactDisplayMenuItem());
 
         menu.Items.Add(new System.Windows.Controls.Separator());
 
@@ -239,6 +241,31 @@ public partial class App : Application
         }
 
         _notificationWindow?.SetPosition(position);
+    }
+
+    /// <summary>
+    /// 「通知をコンパクト表示」トグル。位置設定と同様、選択直後に表示中の通知ウィンドウへ
+    /// 即時反映し、アプリ再起動は不要にする。
+    /// </summary>
+    private System.Windows.Controls.MenuItem BuildCompactDisplayMenuItem()
+    {
+        var item = new System.Windows.Controls.MenuItem
+        {
+            Header = "通知をコンパクト表示",
+            IsCheckable = true,
+            IsChecked = _settings.CompactNotificationDisplay,
+        };
+        // IsCheckable=trueのMenuItemはクリック時にIsCheckedが自動的にトグルされた「後」で
+        // Clickイベントが発火するため、ここでの値をそのまま新しい設定値として使える。
+        item.Click += (_, _) => OnCompactDisplayToggled(item.IsChecked);
+        return item;
+    }
+
+    private void OnCompactDisplayToggled(bool isChecked)
+    {
+        _settings = _settings with { CompactNotificationDisplay = isChecked };
+        AppSettingsStore.Save(_settings);
+        _notificationWindow?.SetCompactDisplay(isChecked);
     }
 
     private async Task RestartApplicationAsync()

@@ -9,12 +9,37 @@
         AllowsTransparency="True"
         Background="Transparent"
         SizeToContent="WidthAndHeight">
+    <Window.Resources>
+        <!-- 既定のToolTipは白背景の素っ気ない見た目でダークテーマと衝突するため、カードと
+             揃えたスタイルに差し替える。 -->
+        <Style TargetType="ToolTip">
+            <Setter Property="Background" Value="#FF1B1F2A" />
+            <Setter Property="BorderBrush" Value="#FF4FC3F7" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Padding" Value="10,8" />
+            <Setter Property="HasDropShadow" Value="True" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToolTip">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
     <Border Background="#EE1B1F2A"
             BorderBrush="#FF4FC3F7"
             BorderThickness="1.5"
             CornerRadius="8"
             Padding="14,10">
-        <StackPanel MinWidth="260" MaxWidth="360">
+        <StackPanel MinWidth="280" MaxWidth="380">
             <Grid Margin="0,0,0,6">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -22,7 +47,7 @@
                 </Grid.ColumnDefinitions>
                 <TextBlock x:Name="TitleText"
                            Grid.Column="0"
-                           Text="★4以上 確定タグの組み合わせ"
+                           Text="おすすめタグ一覧"
                            Foreground="#FF4FC3F7"
                            FontWeight="Bold"
                            FontSize="13"
@@ -41,14 +66,140 @@
                         Cursor="Hand"
                         Click="CloseButton_Click" />
             </Grid>
+
+            <!-- 手動チェック時のみ表示する検出タグの全件サマリ(通常の自動検出では非表示)。 -->
+            <TextBlock x:Name="DebugSummaryText"
+                       Foreground="#FFB0BEC5"
+                       FontSize="12"
+                       TextWrapping="Wrap"
+                       Margin="0,0,0,6"
+                       Visibility="Collapsed" />
+
+            <TextBlock x:Name="NoResultsText"
+                       Text="おすすめの組み合わせはありません"
+                       Foreground="White"
+                       FontSize="13"
+                       Visibility="Collapsed" />
+
             <ItemsControl x:Name="ResultsList">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <TextBlock Text="{Binding}"
-                                   Foreground="White"
-                                   FontSize="13"
-                                   TextWrapping="Wrap"
-                                   Margin="0,2" />
+                        <!-- カード全体の枠線をレアリティ色にすることで、塗りつぶしバッジより
+                             主張を抑えつつ一目で判別できるようにする。ToolTipはカード全体に付与し、
+                             チップが省略されていない場合も含めて常に全対象オペレーター
+                             (レアリティ付き)をホバーで確認できるようにする。 -->
+                        <Border Background="#22FFFFFF"
+                                BorderBrush="{Binding RarityBrush}"
+                                BorderThickness="1.5"
+                                CornerRadius="6"
+                                Padding="10,8"
+                                Margin="0,3">
+                            <Border.ToolTip>
+                                <ToolTip>
+                                    <StackPanel MaxWidth="260">
+                                        <TextBlock Text="対象オペレーター"
+                                                   Foreground="#FF4FC3F7"
+                                                   FontWeight="Bold"
+                                                   FontSize="12"
+                                                   Margin="0,0,0,4" />
+                                        <ItemsControl ItemsSource="{Binding AllOperators}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Grid Margin="0,1">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Grid.Column="0"
+                                                                   Text="{Binding Name}"
+                                                                   Foreground="White"
+                                                                   FontSize="12" />
+                                                        <TextBlock Grid.Column="1"
+                                                                   Text="{Binding RarityLabel}"
+                                                                   Foreground="{Binding RarityBrush}"
+                                                                   FontWeight="Bold"
+                                                                   FontSize="12"
+                                                                   Margin="10,0,0,0" />
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </ToolTip>
+                            </Border.ToolTip>
+                            <StackPanel>
+                                <!-- 通常表示: 「N★以上確定」ラベル行とタグ行を分けて表示する。 -->
+                                <StackPanel Visibility="{Binding NormalHeaderVisibility}">
+                                    <Grid Margin="0,0,0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="{Binding RarityText}"
+                                                   Foreground="{Binding RarityBrush}"
+                                                   FontWeight="Bold"
+                                                   FontSize="13" />
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding CountText}"
+                                                   Foreground="#FFB0BEC5"
+                                                   FontSize="11"
+                                                   VerticalAlignment="Top" />
+                                    </Grid>
+                                    <TextBlock Text="{Binding TagsText}"
+                                               Foreground="#FF4FC3F7"
+                                               FontSize="13"
+                                               TextWrapping="Wrap"
+                                               Margin="0,0,0,6" />
+                                </StackPanel>
+
+                                <!-- コンパクト表示: 「N★以上確定」の文字ラベルは出さず、カード枠線の色と
+                                     右上の件数だけでレアリティ・対象人数を示す。その分タグをヘッダー行に
+                                     統合して行数を減らしている。トレイメニューから切替可能(ユーザー確認済み)。 -->
+                                <Grid Visibility="{Binding CompactHeaderVisibility}" Margin="0,0,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0"
+                                               Text="{Binding TagsText}"
+                                               Foreground="#FF4FC3F7"
+                                               FontSize="13"
+                                               TextWrapping="Wrap"
+                                               VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding CountText}"
+                                               Foreground="#FFB0BEC5"
+                                               FontSize="11"
+                                               Margin="8,0,0,0"
+                                               VerticalAlignment="Top" />
+                                </Grid>
+
+                                <!-- 対象オペレーターは1人ずつ、その人自身のレアリティ色を薄く塗った
+                                     チップで表示する(「4★以上確定」でも実際には5★・6★が混ざる
+                                     ことがあるため)。枠線にするとカード全体の枠線と同じ見た目になり
+                                     紛らわしかった(ユーザー指摘)ため、ごく薄い塗りつぶしにしている。 -->
+                                <ItemsControl ItemsSource="{Binding OperatorChips}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="{Binding TintBrush}"
+                                                    CornerRadius="3"
+                                                    Padding="5,1"
+                                                    Margin="0,0,4,4">
+                                                <TextBlock Text="{Binding Name}"
+                                                           Foreground="White"
+                                                           FontSize="12" />
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>

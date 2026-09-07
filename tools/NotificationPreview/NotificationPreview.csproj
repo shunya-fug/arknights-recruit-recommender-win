@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- 参照先(ArknightsRecruitRecommender本体)が自己完結型(SelfContained)発行のため、
+         参照する側もRuntimeIdentifier/SelfContainedを揃える必要がある(NETSDK1151)。 -->
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ArknightsRecruitRecommender\ArknightsRecruitRecommender.csproj" />
+  </ItemGroup>
+
+</Project>
