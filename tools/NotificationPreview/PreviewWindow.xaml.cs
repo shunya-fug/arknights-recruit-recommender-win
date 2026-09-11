@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using ArknightsRecruitRecommender.Models;
 using ArknightsRecruitRecommender.Services;
@@ -32,6 +33,7 @@ public partial class PreviewWindow : Window
         _knownTags = OperatorDataProvider.GetAllKnownTags(_operators);
 
         BuildTagButtons();
+        BuildPositionComboBox();
         UpdateResults();
 
         // このプレビュー用ウィンドウを閉じたらプロセスごと終了する。NotificationWindowは
@@ -54,6 +56,28 @@ public partial class PreviewWindow : Window
             button.Click += (_, _) => UpdateResults();
             _tagButtons[tag] = button;
             TagsPanel.Children.Add(button);
+        }
+    }
+
+    /// <summary>
+    /// _notificationWindowの初期位置(NotificationPosition.TopRight、フィールド初期化子参照)と
+    /// 選択状態を合わせるため、"右上"を初期選択にする。
+    /// </summary>
+    private void BuildPositionComboBox()
+    {
+        foreach (var (position, label) in NotificationPositionLabels.Options)
+        {
+            PositionComboBox.Items.Add(new ComboBoxItem { Content = label, Tag = position });
+        }
+
+        PositionComboBox.SelectedIndex = Array.FindIndex(NotificationPositionLabels.Options, o => o.Position == NotificationPosition.TopRight);
+    }
+
+    private void PositionComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (PositionComboBox.SelectedItem is ComboBoxItem { Tag: NotificationPosition position })
+        {
+            _notificationWindow.SetPosition(position);
         }
     }
 
