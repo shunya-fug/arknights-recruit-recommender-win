@@ -34,7 +34,11 @@
             </Setter>
         </Style>
     </Window.Resources>
-    <Border Background="#EE1B1F2A"
+    <!-- 通知の出し入れは、このBorderのVisibility切替で行う(ウィンドウ自体はHide()しない)。
+         理由はNotificationWindow.RevealNotification()のコメント参照。初期状態は非表示。 -->
+    <Border x:Name="RootBorder"
+            Visibility="Collapsed"
+            Background="#EE1B1F2A"
             BorderBrush="#FF4FC3F7"
             BorderThickness="1.5"
             CornerRadius="8"

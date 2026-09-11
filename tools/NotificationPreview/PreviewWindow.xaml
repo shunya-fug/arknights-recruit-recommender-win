@@ -45,6 +45,15 @@
                       VerticalAlignment="Center"
                       Margin="24,0,0,0"
                       Click="CompactDisplayCheckBox_Click" />
+            <TextBlock Text="表示位置"
+                       Foreground="White"
+                       VerticalAlignment="Center"
+                       Margin="24,0,6,0" />
+            <ComboBox x:Name="PositionComboBox"
+                      Width="80"
+                      Background="#FF2A2F3D"
+                      Foreground="White"
+                      SelectionChanged="PositionComboBox_SelectionChanged" />
         </StackPanel>
 
         <TextBlock DockPanel.Dock="Top"

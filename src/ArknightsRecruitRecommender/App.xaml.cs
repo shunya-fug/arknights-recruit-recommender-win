@@ -71,7 +71,7 @@ public partial class App : Application
         _monitor.RecommendationsUpdated += results =>
             Dispatcher.Invoke(() => _notificationWindow!.ShowResults(results));
         _monitor.RecruitmentScreenLost += () =>
-            Dispatcher.Invoke(() => _notificationWindow!.Hide());
+            Dispatcher.Invoke(() => _notificationWindow!.HideNotification());
     }
 
     private System.Windows.Controls.ContextMenu BuildContextMenu()
@@ -190,14 +190,6 @@ public partial class App : Application
         }
     }
 
-    private static readonly (NotificationPosition Position, string Label)[] NotificationPositionOptions =
-    {
-        (NotificationPosition.TopLeft, "左上"),
-        (NotificationPosition.TopRight, "右上"),
-        (NotificationPosition.BottomLeft, "左下"),
-        (NotificationPosition.BottomRight, "右下"),
-    };
-
     private readonly List<(NotificationPosition Position, System.Windows.Controls.MenuItem Item)> _positionMenuItems = new();
 
     /// <summary>
@@ -209,7 +201,7 @@ public partial class App : Application
         var positionMenu = new System.Windows.Controls.MenuItem { Header = "通知の表示位置" };
         _positionMenuItems.Clear();
 
-        foreach (var (position, label) in NotificationPositionOptions)
+        foreach (var (position, label) in NotificationPositionLabels.Options)
         {
             var item = new System.Windows.Controls.MenuItem
             {

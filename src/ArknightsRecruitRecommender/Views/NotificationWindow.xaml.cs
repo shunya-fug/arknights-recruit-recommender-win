@@ -28,6 +28,9 @@ public partial class NotificationWindow : Window
     // コンパクト表示の切り替え時に即座に再描画するため、直近に表示した組み合わせを保持しておく。
     private IReadOnlyList<CombinationResult>? _lastResults;
 
+    // ウィンドウ自体のShow()は最初の通知表示時に一度だけ行い、以後はHide()せず出したままにする。
+    private bool _windowShown;
+
     public NotificationWindow(NotificationPosition position)
     {
         InitializeComponent();
@@ -84,7 +87,7 @@ public partial class NotificationWindow : Window
         TitleText.Text = "おすすめタグ一覧";
         DebugSummaryText.Visibility = Visibility.Collapsed;
         RenderResults(results);
-        Show();
+        RevealNotification();
     }
 
     /// <summary>
@@ -100,8 +103,35 @@ public partial class NotificationWindow : Window
             : $"検出タグ: {string.Join(" / ", result.MatchedTags)}";
         DebugSummaryText.Visibility = Visibility.Visible;
         RenderResults(result.Combinations.Where(r => r.IsRecommended).ToList());
-        Show();
+        RevealNotification();
     }
+
+    /// <summary>
+    /// 通知の中身(RootBorder)を表示する。
+    ///
+    /// 通知の出し入れは、ウィンドウ自体のHide()/Show()ではなくRootBorderのVisibility切替で行う。
+    /// Hide()したウィンドウをShow()すると、非表示中にビジュアルツリーへ残っていた前回の内容が、
+    /// 新しい内容へ再描画されるまでの数フレームだけ古いサイズのまま見えてしまい、切り替わりが
+    /// ちらついて見える(実機で確認)。ウィンドウのHWNDを最初の表示以降ずっと出したままにすれば、
+    /// この「古い描画面が一瞬見える」問題自体が起きない。閉じている間はRootBorderがCollapsedで
+    /// ウィンドウ全体が透明(=クリックスルー)になるため、常時表示でも操作の邪魔にはならない。
+    /// </summary>
+    private void RevealNotification()
+    {
+        RootBorder.Visibility = Visibility.Visible;
+
+        if (!_windowShown)
+        {
+            _windowShown = true;
+            Show();
+        }
+    }
+
+    /// <summary>
+    /// 通知の中身を隠す。ウィンドウ自体はHide()せず出したままにする(理由は<see cref="RevealNotification"/>
+    /// のコメント参照)。トレイメニューの×ボタンと、求人画面から離れたタイミングの両方から呼ばれる。
+    /// </summary>
+    public void HideNotification() => RootBorder.Visibility = Visibility.Collapsed;
 
     private void RenderResults(IReadOnlyList<CombinationResult> results)
     {
@@ -194,7 +224,7 @@ public partial class NotificationWindow : Window
         _ => FallbackTintBrush,
     };
 
-    private void CloseButton_Click(object sender, RoutedEventArgs e) => Hide();
+    private void CloseButton_Click(object sender, RoutedEventArgs e) => HideNotification();
 
     /// <summary>
     /// 通知1件分の表示用データ。ドメインモデル(<see cref="CombinationResult"/>)をそのまま
