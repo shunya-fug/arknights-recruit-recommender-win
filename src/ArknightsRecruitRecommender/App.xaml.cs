@@ -57,6 +57,50 @@ public partial class App : Application
             StartMonitor();
             DiagnosticLog.Write("[起動] 監視サービス初期化完了(D3D11デバイス・OCRエンジン作成を含む)");
         }), DispatcherPriority.Background);
+
+        // 監視サービスの初期化とは無関係な処理のため、独立してバックグラウンドで実行する。
+        Dispatcher.BeginInvoke(new Action(async () => await CheckForUpdateAsync()), DispatcherPriority.Background);
+    }
+
+    /// <summary>
+    /// GitHub Releasesの最新版を確認し、実行中のバージョンより新しければ知らせる(Issue #27)。
+    /// オフライン・API制限等で確認自体に失敗しても、ログに残すだけでアプリの起動・動作は
+    /// 妨げない。
+    /// </summary>
+    private async Task CheckForUpdateAsync()
+    {
+        try
+        {
+            var currentVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version
+                ?? new Version(0, 0, 0, 0);
+            var update = await UpdateCheckService.CheckForUpdateAsync(currentVersion);
+            if (update is null)
+            {
+                return;
+            }
+
+            var latestVersionText = update.LatestVersion.ToString();
+            if (latestVersionText == _settings.AcknowledgedUpdateVersion)
+            {
+                // 同じバージョンを起動のたびに通知し続けると邪魔なため、一度見せたバージョンは
+                // 次に新しいバージョンが出るまで再通知しない。
+                return;
+            }
+
+            DiagnosticLog.Write($"[更新確認] 新しいバージョンがあります: {update.LatestVersion}");
+            await ShowMessageBoxAsync(
+                $"新しいバージョン({update.LatestVersion})が公開されています。\n\n{update.HtmlUrl}",
+                "更新の確認",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+
+            _settings = _settings with { AcknowledgedUpdateVersion = latestVersionText };
+            AppSettingsStore.Save(_settings);
+        }
+        catch (Exception ex)
+        {
+            DiagnosticLog.Write($"[更新確認] 確認に失敗しました(起動は継続): {ex}");
+        }
     }
 
     /// <summary>
