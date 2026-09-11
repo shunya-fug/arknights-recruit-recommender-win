@@ -19,7 +19,10 @@ namespace ArknightsRecruitRecommender.Services;
 /// </summary>
 internal static class AppDataPaths
 {
-    private static readonly bool IsLocalDevOrTest =
+    // AppSettingsStore/DiagnosticLog以外にも、スタートアップ登録(HKCU\...\Run)のように
+    // ローカルでの検証がそのままWindowsログイン時の実機動作へ永続的に影響しうる箇所があるため、
+    // 同じ判定を他クラスからも使えるようinternalで公開する。
+    internal static readonly bool IsLocalDevOrTest =
 #if DEBUG
         true;
 #else

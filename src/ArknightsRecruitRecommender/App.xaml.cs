@@ -191,6 +191,12 @@ public partial class App : Application
         menu.Items.Add(BuildLanguageMenuItem());
         menu.Items.Add(BuildNotificationPositionMenuItem());
         menu.Items.Add(BuildCompactDisplayMenuItem());
+        var startupItem = BuildStartupMenuItem();
+        menu.Items.Add(startupItem);
+        // レジストリの値そのものを正とする(AppSettingsに独自の状態を持たない)ため、
+        // タスクマネージャーのスタートアップタブ等から直接変更された場合にもズレないよう、
+        // メニューを開く直前に毎回チェック状態を読み直す。読み取り自体は高速(1ms未満)。
+        menu.Opened += (_, _) => startupItem.IsChecked = IsRegisteredForStartup();
 
         menu.Items.Add(new System.Windows.Controls.Separator());
         menu.Items.Add(BuildVersionMenuItem());
@@ -409,6 +415,69 @@ public partial class App : Application
         _settings = _settings with { CompactNotificationDisplay = isChecked };
         AppSettingsStore.Save(_settings);
         _notificationWindow?.SetCompactDisplay(isChecked);
+    }
+
+    private const string StartupRegistryKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
+
+    // AppDataPaths.RootDirectoryと同様、Debug構成/テストホストからの実行では別の値名を使う。
+    // 同じ値名のままだと、開発者がdotnet run/dotnet test経由でこのトグルをローカル検証した際、
+    // bin/Debug配下の一時的なビルドパスがHKCU\...\Runに永続登録されてしまい、実機のWindows
+    // ログイン時にそのビルドを起動しようとし続ける(削除後は起動に失敗する)不具合につながる。
+    private static readonly string StartupRegistryValueName =
+        AppDataPaths.IsLocalDevOrTest ? "ArknightsRecruitRecommender.Debug" : "ArknightsRecruitRecommender";
+
+    /// <summary>
+    /// 「Windows起動時に自動起動」トグル。AppSettingsには独自の状態を持たず、
+    /// レジストリ(HKCU\...\Run)の実際の値そのものを正とする(IsRegisteredForStartup参照)。
+    /// </summary>
+    private System.Windows.Controls.MenuItem BuildStartupMenuItem()
+    {
+        var item = new System.Windows.Controls.MenuItem
+        {
+            Header = "Windows起動時に自動起動",
+            IsCheckable = true,
+            IsChecked = IsRegisteredForStartup(),
+        };
+        item.Click += (_, _) => SetStartupRegistration(item.IsChecked);
+        return item;
+    }
+
+    private static bool IsRegisteredForStartup()
+    {
+        try
+        {
+            using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(StartupRegistryKeyPath, writable: false);
+            return key?.GetValue(StartupRegistryValueName) is string;
+        }
+        catch (Exception ex)
+        {
+            DiagnosticLog.Write($"[スタートアップ登録] 確認に失敗しました: {ex}");
+            return false;
+        }
+    }
+
+    private static void SetStartupRegistration(bool enabled)
+    {
+        try
+        {
+            using var key = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(StartupRegistryKeyPath, writable: true);
+            if (enabled)
+            {
+                var exePath = Process.GetCurrentProcess().MainModule?.FileName;
+                if (exePath is not null)
+                {
+                    key.SetValue(StartupRegistryValueName, $"\"{exePath}\"");
+                }
+            }
+            else
+            {
+                key.DeleteValue(StartupRegistryValueName, throwOnMissingValue: false);
+            }
+        }
+        catch (Exception ex)
+        {
+            DiagnosticLog.Write($"[スタートアップ登録] 変更に失敗しました: {ex}");
+        }
     }
 
     private async Task RestartApplicationAsync()
