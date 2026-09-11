@@ -71,7 +71,7 @@ public partial class App : Application
         _monitor.RecommendationsUpdated += results =>
             Dispatcher.Invoke(() => _notificationWindow!.ShowResults(results));
         _monitor.RecruitmentScreenLost += () =>
-            Dispatcher.Invoke(() => _notificationWindow!.Hide());
+            Dispatcher.Invoke(() => _notificationWindow!.HideNotification());
     }
 
     private System.Windows.Controls.ContextMenu BuildContextMenu()
