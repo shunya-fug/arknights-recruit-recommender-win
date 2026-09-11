@@ -6,16 +6,13 @@ using ArknightsRecruitRecommender.Models;
 namespace ArknightsRecruitRecommender.Services;
 
 /// <summary>
-/// AppSettingsを %LOCALAPPDATA%\ArknightsRecruitRecommender\settings.json に
-/// 読み書きする。ファイルが無い・壊れている場合はデフォルト設定を返す
+/// AppSettingsをAppDataPaths.RootDirectory配下のsettings.json(Debug/Releaseでフォルダが
+/// 異なる)に読み書きする。ファイルが無い・壊れている場合はデフォルト設定を返す
 /// (設定ファイルの問題でアプリが起動できなくなることを避けるため)。
 /// </summary>
 public static class AppSettingsStore
 {
-    private static readonly string SettingsFilePath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "ArknightsRecruitRecommender",
-        "settings.json");
+    private static readonly string SettingsFilePath = Path.Combine(AppDataPaths.RootDirectory, "settings.json");
 
     // 列挙型(NotificationPosition)を数値ではなく名前で保存し、設定ファイルを目視確認・
     // 手動編集しやすくする。

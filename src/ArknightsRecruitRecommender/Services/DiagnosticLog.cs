@@ -5,14 +5,11 @@ namespace ArknightsRecruitRecommender.Services;
 /// <summary>
 /// 実機での動作確認時、GUIのダイアログ/通知ウィンドウが一瞬で消えてしまい内容を確認できない
 /// 場合があるため、主要なイベントをファイルに追記しておく簡易ロガー。
-/// %LOCALAPPDATA%\ArknightsRecruitRecommender\diagnostic.log に書き出す。
+/// 保存先はAppDataPaths.RootDirectory配下のdiagnostic.log(Debug/Releaseでフォルダが異なる)。
 /// </summary>
 public static class DiagnosticLog
 {
-    private static readonly string LogFilePath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "ArknightsRecruitRecommender",
-        "diagnostic.log");
+    private static readonly string LogFilePath = Path.Combine(AppDataPaths.RootDirectory, "diagnostic.log");
 
     public static void Write(string message)
     {
