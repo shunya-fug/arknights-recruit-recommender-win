@@ -27,6 +27,20 @@ public sealed class RecruitmentMonitorService : IDisposable
     // 発生しても4〜5個は検出できている実績があるため、4に引き上げて誤検出との差を広げた。
     private const int MinMatchedTagsForRecruitmentScreen = 4;
 
+    // タグ数の閾値だけでは、オペレーター詳細画面等の説明文で偶然タグ名と一致する単語が
+    // 閾値個数揃ってしまうケースを防ぎきれない(実機で確認: オペレーター詳細画面で
+    // 「遠距離/火力/減速/召喚」の4語が偶然一致し誤通知)。公開求人画面にしか出現しない
+    // 固定UI文言(タグそのものではない)もあわせて要求することで、より確実に画面を判別する。
+    // 現状ja-JPでのみ実機確認済み。他ロケールでの実際の表記は未確認のため、それ以外の
+    // ロケールではこの追加判定を行わずタグ数の閾値のみで判定する
+    // (README「Global版未検証」と同様の既知の制限)。
+    private static readonly IReadOnlyDictionary<string, string> RecruitmentScreenAnchorByLocale =
+        new Dictionary<string, string> { ["ja-JP"] = "募集条件" };
+
+    // 300msごとのポーリングで毎回HasRecruitmentScreenAnchorから参照するため、呼び出しのたびに
+    // 単一要素配列を割り当て直さずに済むようフィールドとして保持しておく。
+    private readonly string[]? _recruitmentScreenAnchorSearchTerms;
+
     private readonly WindowCaptureService _captureService = new();
     private readonly TagOcrService _ocrService;
     private readonly RecruitmentAnalyzer _analyzer = new();
@@ -72,6 +86,8 @@ public sealed class RecruitmentMonitorService : IDisposable
         _operators = new OperatorDataProvider(locale: locale).Load();
         _knownTags = OperatorDataProvider.GetAllKnownTags(_operators);
         _ocrService = new TagOcrService(new Language(locale));
+        var recruitmentScreenAnchor = RecruitmentScreenAnchorByLocale.GetValueOrDefault(locale);
+        _recruitmentScreenAnchorSearchTerms = recruitmentScreenAnchor is null ? null : new[] { recruitmentScreenAnchor };
         _timer = new System.Threading.Timer(_ => _ = TickAsync(), null, TimeSpan.Zero, PollInterval);
     }
 
@@ -161,7 +177,9 @@ public sealed class RecruitmentMonitorService : IDisposable
         try
         {
             var result = await CheckOnceCoreAsync();
-            var isOnRecruitmentScreen = result is not null && result.MatchedTags.Count >= MinMatchedTagsForRecruitmentScreen;
+            var isOnRecruitmentScreen = result is not null
+                && result.MatchedTags.Count >= MinMatchedTagsForRecruitmentScreen
+                && HasRecruitmentScreenAnchor(result.RawOcrWords);
 
             if (!isOnRecruitmentScreen)
             {
@@ -223,6 +241,15 @@ public sealed class RecruitmentMonitorService : IDisposable
             _checkGate.Release();
         }
     }
+
+    /// <summary>
+    /// アンカー文言が設定されているロケール(現状ja-JPのみ)では、その文言が
+    /// OCR結果(タグ照合前の生の検出結果)に含まれるかを、タグと同じあいまい一致で確認する。
+    /// 未設定のロケールでは実機未確認のため何もチェックせずtrueを返す(タグ数の閾値のみで判定)。
+    /// </summary>
+    private bool HasRecruitmentScreenAnchor(IReadOnlyList<DetectedTag> rawOcrWords) =>
+        _recruitmentScreenAnchorSearchTerms is null
+        || TagMatcher.MatchKnownTags(rawOcrWords, _recruitmentScreenAnchorSearchTerms).Count > 0;
 
     public void Dispose()
     {
