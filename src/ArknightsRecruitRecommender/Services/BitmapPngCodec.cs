@@ -4,9 +4,9 @@ using System.Windows.Media.Imaging;
 namespace ArknightsRecruitRecommender.Services;
 
 /// <summary>
-/// BitmapSourceをPNGとしてエンコードする処理を1箇所にまとめたもの。OCR用の変換
-/// (TagOcrService)とデバッグ用のキャプチャ画像保存(DebugArtifactWriter)の両方で
-/// 同じエンコード手順が必要になるため共通化している。
+/// BitmapSourceをPNGとしてエンコードする処理を1箇所にまとめたもの。現状はデバッグ用の
+/// キャプチャ画像保存(DebugArtifactWriter)でのみ使用(OCR用の変換(TagOcrService)は
+/// Issue #29でPNG往復を経由しない方式に変更済み)。
 /// </summary>
 public static class BitmapPngCodec
 {

@@ -8,12 +8,18 @@ public sealed class RecruitmentMonitorService : IDisposable
 {
     // 実機確認済み: PC版アークナイツの実行ファイル名(表示言語に関わらず共通)。
     private const string GameProcessName = "Arknights";
-    // 実機計測(Issue #6調査): capture+OCR+判定の合計処理時間は通常190〜230ms程度(稀に
-    // 250ms超)。以前は200msだったが、これだと1ティックの処理がポーリング間隔を超えてしまい、
-    // 次のティックが(_checkGateが空くまで)スキップされ続け、実質的なポーリング間隔が
-    // 意図した200msの倍(約400ms)まで悪化していた。実測の処理時間に対して余裕を持たせるため
-    // 300msに緩めた(OCR自体を縮小して高速化する案もあったが、精度とのトレードオフになる
-    // ため見送り、素直に間隔を実測値に合わせる方を選んだ)。
+    // 実機計測(Issue #6調査、当時): capture+OCR+判定の合計処理時間は通常190〜230ms程度
+    // (稀に250ms超)だった。以前は200msだったが、これだと1ティックの処理がポーリング間隔を
+    // 超えてしまい、次のティックが(_checkGateが空くまで)スキップされ続け、実質的なポーリング
+    // 間隔が意図した200msの倍(約400ms)まで悪化していた。実測の処理時間に対して余裕を
+    // 持たせるため300msに緩めていた。
+    //
+    // 実機再計測(Issue #29対応後): BitmapSource→SoftwareBitmap変換をPNG往復無しの方式に
+    // 変更したことで、フォールバック幅リトライ(FallbackNormalizedWidth参照、2回分のOCRを
+    // 伴う最も重いケース)込みでも合計209〜397ms(中央値232ms付近)まで縮んだ。フォールバックが
+    // 発火しない通常ケースはさらに軽いと見込まれる(未計測)。間隔を数十ms詰める案も検討したが、
+    // 詰めた分の体感差はほぼ無い一方、外れ値(300ms超)でティックがスキップされて実質的な
+    // ポーリング間隔が悪化するリスクの方が実害として大きいと判断し、300msのまま据え置いた。
     private static readonly TimeSpan PollInterval = TimeSpan.FromMilliseconds(300);
     private static readonly TimeSpan FirstFrameTimeout = TimeSpan.FromMilliseconds(100);
 
@@ -26,6 +32,32 @@ public sealed class RecruitmentMonitorService : IDisposable
     // 3タグ揃って「おすすめ」判定になった)。実際の公開求人画面ではOCRの読み落としが1個程度
     // 発生しても4〜5個は検出できている実績があるため、4に引き上げて誤検出との差を広げた。
     private const int MinMatchedTagsForRecruitmentScreen = 4;
+
+    // 公開求人画面のタグ枠は実際には5〜6個あるため(上のコメント参照)、検出数がちょうど
+    // MinMatchedTagsForRecruitmentScreenと同数(=ぎりぎり閾値を満たしただけ)の場合は、
+    // 1個以上見落としている疑いが強い。実機検証で判明した通り、特定のタグ(例:「治療」)は
+    // TagOcrService既定の正規化幅(1920px)では構造的に検出できないため(Issue #4)、
+    // その場合だけ別の幅でもう一度OCRを掛けて結果をマージする。常に2回OCRを行うとコストが
+    // 実測200ms前後から倍程度に増えるため(PollIntervalの余裕を圧迫する)、CheckOnceCoreAsync側で
+    // アンカー確認済みの場合のみに絞って実行する。なお、この手のタグは1920pxでは何度リトライ
+    // しても検出できない(実機検証で確認済み: 解像度依存の失敗は決定論的でランダムではない)ため、
+    // 該当タグが画面に表示され続ける間はこの条件付き実行が毎ティック発火し続ける
+    // (=画面を見ている間はコストが倍のまま続く)。これは見落としを防ぐための意図した挙動。
+    private const int FallbackNormalizedWidth = 1600;
+
+    // タグ数の閾値だけでは、オペレーター詳細画面等の説明文で偶然タグ名と一致する単語が
+    // 閾値個数揃ってしまうケースを防ぎきれない(実機で確認: オペレーター詳細画面で
+    // 「遠距離/火力/減速/召喚」の4語が偶然一致し誤通知)。公開求人画面にしか出現しない
+    // 固定UI文言(タグそのものではない)もあわせて要求することで、より確実に画面を判別する。
+    // 現状ja-JPでのみ実機確認済み。他ロケールでの実際の表記は未確認のため、それ以外の
+    // ロケールではこの追加判定を行わずタグ数の閾値のみで判定する
+    // (README「Global版未検証」と同様の既知の制限)。
+    private static readonly IReadOnlyDictionary<string, string> RecruitmentScreenAnchorByLocale =
+        new Dictionary<string, string> { ["ja-JP"] = "募集条件" };
+
+    // 300msごとのポーリングで毎回HasRecruitmentScreenAnchorから参照するため、呼び出しのたびに
+    // 単一要素配列を割り当て直さずに済むようフィールドとして保持しておく。
+    private readonly string[]? _recruitmentScreenAnchorSearchTerms;
 
     private readonly WindowCaptureService _captureService = new();
     private readonly TagOcrService _ocrService;
@@ -72,6 +104,8 @@ public sealed class RecruitmentMonitorService : IDisposable
         _operators = new OperatorDataProvider(locale: locale).Load();
         _knownTags = OperatorDataProvider.GetAllKnownTags(_operators);
         _ocrService = new TagOcrService(new Language(locale));
+        var recruitmentScreenAnchor = RecruitmentScreenAnchorByLocale.GetValueOrDefault(locale);
+        _recruitmentScreenAnchorSearchTerms = recruitmentScreenAnchor is null ? null : new[] { recruitmentScreenAnchor };
         _timer = new System.Threading.Timer(_ => _ = TickAsync(), null, TimeSpan.Zero, PollInterval);
     }
 
@@ -122,6 +156,33 @@ public sealed class RecruitmentMonitorService : IDisposable
 
         var detected = await _ocrService.RecognizeAsync(frame);
         var visibleTags = TagMatcher.MatchKnownTags(detected, _knownTags);
+
+        // 公開求人画面らしさ(アンカー文言)が既に確認できている場合に限ってリトライする。
+        // 無関係な画面でタグ名と偶然4個一致しただけのケース(誤通知の温床、上のコメント参照)
+        // まで毎ティックOCRを倍実行してしまうと無駄なコストが継続するため。
+        if (visibleTags.Count == MinMatchedTagsForRecruitmentScreen && HasRecruitmentScreenAnchor(detected))
+        {
+            var fallbackDetected = await _ocrService.RecognizeAsync(frame, FallbackNormalizedWidth);
+
+            // 各パスを別々にMatchKnownTagsへ通してからタグ名だけを合算する案も検討したが、
+            // 「あるパスの誤読断片が単独で別タグにあいまい一致してしまう」ケース(近距離/遠距離
+            // 等、TagMatcher.cs参照)は、その断片が生じたパス単独の照合でも同様に起きることを
+            // 検証で確認した(もう一方のパスと混ぜるかどうかに関わらない、TagMatcher自体の
+            // 既存の限界)。そのため生OCR単語を素直に結合してから1回で照合する(こちらの方が、
+            // 一方のパスで完全一致したタグ名を、もう一方のパスの紛らわしい断片からも除外できる
+            // ぶんだけ、むしろ安全側に働く)。
+            var mergedDetected = detected.Concat(fallbackDetected).ToList();
+            var mergedVisibleTags = TagMatcher.MatchKnownTags(mergedDetected, _knownTags);
+
+            // フォールバック側が何も新しいタグを見つけられなかった場合はdetected/visibleTagsを
+            // 元のままにする(RawOcrWordsに意味のない重複単語を残さないため)。
+            if (mergedVisibleTags.Count > visibleTags.Count)
+            {
+                detected = mergedDetected;
+                visibleTags = mergedVisibleTags;
+            }
+        }
+
         var combinations = _analyzer.Evaluate(visibleTags, _operators);
 
         return new RecruitmentCheckResult(frame, detected, visibleTags, combinations);
@@ -161,7 +222,9 @@ public sealed class RecruitmentMonitorService : IDisposable
         try
         {
             var result = await CheckOnceCoreAsync();
-            var isOnRecruitmentScreen = result is not null && result.MatchedTags.Count >= MinMatchedTagsForRecruitmentScreen;
+            var isOnRecruitmentScreen = result is not null
+                && result.MatchedTags.Count >= MinMatchedTagsForRecruitmentScreen
+                && HasRecruitmentScreenAnchor(result.RawOcrWords);
 
             if (!isOnRecruitmentScreen)
             {
@@ -223,6 +286,15 @@ public sealed class RecruitmentMonitorService : IDisposable
             _checkGate.Release();
         }
     }
+
+    /// <summary>
+    /// アンカー文言が設定されているロケール(現状ja-JPのみ)では、その文言が
+    /// OCR結果(タグ照合前の生の検出結果)に含まれるかを、タグと同じあいまい一致で確認する。
+    /// 未設定のロケールでは実機未確認のため何もチェックせずtrueを返す(タグ数の閾値のみで判定)。
+    /// </summary>
+    private bool HasRecruitmentScreenAnchor(IReadOnlyList<DetectedTag> rawOcrWords) =>
+        _recruitmentScreenAnchorSearchTerms is null
+        || TagMatcher.MatchKnownTags(rawOcrWords, _recruitmentScreenAnchorSearchTerms).Count > 0;
 
     public void Dispose()
     {

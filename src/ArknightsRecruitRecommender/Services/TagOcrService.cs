@@ -1,9 +1,8 @@
-using System.IO;
+using System.Runtime.InteropServices.WindowsRuntime;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Windows.Globalization;
 using Windows.Media.Ocr;
-using Windows.Storage.Streams;
-using WicBitmapDecoder = Windows.Graphics.Imaging.BitmapDecoder;
 
 namespace ArknightsRecruitRecommender.Services;
 
@@ -52,10 +51,15 @@ public sealed class TagOcrService
     private static string PrimarySubtag(string languageTag) =>
         languageTag.Split('-')[0].ToLowerInvariant();
 
-    public async Task<IReadOnlyList<DetectedTag>> RecognizeAsync(BitmapSource capturedFrame)
+    /// <param name="normalizedWidth">
+    /// OCRに渡す前に正規化する幅。省略時は<see cref="NormalizedWidth"/>(既定の1920px)。
+    /// 特定のタグ(例:「治療」)は1920px幅では構造的に検出できないことが実機検証で判明して
+    /// おり(Issue #4)、呼び出し側がその疑いがある場合に別の幅を指定して再試行できるようにする。
+    /// </param>
+    public async Task<IReadOnlyList<DetectedTag>> RecognizeAsync(BitmapSource capturedFrame, int normalizedWidth = NormalizedWidth)
     {
-        var normalized = NormalizeWidth(capturedFrame);
-        var softwareBitmap = await ConvertToSoftwareBitmapAsync(normalized);
+        var normalized = NormalizeWidth(capturedFrame, normalizedWidth);
+        var softwareBitmap = ConvertToSoftwareBitmap(normalized);
         var result = await _engine.RecognizeAsync(softwareBitmap);
 
         var words = new List<DetectedTag>();
@@ -90,45 +94,53 @@ public sealed class TagOcrService
     }
 
     /// <summary>
-    /// キャプチャ画像をNormalizedWidthへ正規化する(アスペクト比は保持)。詳細はフィールドの
-    /// コメント参照。
+    /// キャプチャ画像を指定の幅へ正規化する(アスペクト比は保持)。既定幅についての詳細は
+    /// フィールドのコメント参照。
     /// </summary>
-    private static BitmapSource NormalizeWidth(BitmapSource source)
+    private static BitmapSource NormalizeWidth(BitmapSource source, int targetWidth)
     {
         // PixelWidthが0(何らかの理由で縦横比が壊れた不正なフレーム)の場合、スケール計算が
         // InfinityになりTransformedBitmapの生成で例外になる。呼び出し元(RecruitmentMonitor
         // Service.TickAsync)は例外を捕捉して1ティック分スキップするだけだが、そもそも
         // 正規化しようがないフレームなので、ここで早期に諦めて元のフレームをそのまま返す方が
         // 意図が明確。
-        if (source.PixelWidth <= 0 || source.PixelWidth == NormalizedWidth)
+        if (source.PixelWidth <= 0 || source.PixelWidth == targetWidth)
         {
             return source;
         }
 
-        var scale = (double)NormalizedWidth / source.PixelWidth;
+        var scale = (double)targetWidth / source.PixelWidth;
         var transformed = new TransformedBitmap(source, new System.Windows.Media.ScaleTransform(scale, scale));
         transformed.Freeze();
         return transformed;
     }
 
-    private static async Task<Windows.Graphics.Imaging.SoftwareBitmap> ConvertToSoftwareBitmapAsync(BitmapSource source)
+    /// <summary>
+    /// WPFのBitmapSourceからWinRTのSoftwareBitmapへ、生のピクセルバイト列を直接コピーして
+    /// 変換する。以前はPNGへエンコードしてからWinRT側で再デコードする往復方式だったが、
+    /// 実測で圧縮・展開のコストがOCR本体(RecognizeAsync)より支配的だったため
+    /// (Issue #29)、圧縮を経由しないこの方式に置き換えた。
+    /// </summary>
+    private static Windows.Graphics.Imaging.SoftwareBitmap ConvertToSoftwareBitmap(BitmapSource source)
     {
-        using var stream = new MemoryStream();
-        BitmapPngCodec.Encode(source, stream);
-        stream.Position = 0;
+        // WinRT側が要求するBgra8+Premultipliedと一致するPbgra32へ、必要な場合のみ変換する
+        // (キャプチャ・正規化後のBitmapSourceが既にPbgra32であるケースの無駄な変換を避ける)。
+        var pbgra32Source = source.Format == PixelFormats.Pbgra32
+            ? source
+            : new FormatConvertedBitmap(source, PixelFormats.Pbgra32, null, 0);
 
-        using var randomAccessStream = new InMemoryRandomAccessStream();
-        using (var writer = new DataWriter(randomAccessStream.GetOutputStreamAt(0)))
-        {
-            writer.WriteBytes(stream.ToArray());
-            await writer.StoreAsync();
-            await writer.FlushAsync();
-            writer.DetachStream();
-        }
+        var width = pbgra32Source.PixelWidth;
+        var height = pbgra32Source.PixelHeight;
+        var stride = width * 4;
+        var pixels = new byte[stride * height];
+        pbgra32Source.CopyPixels(pixels, stride, 0);
 
-        var decoder = await WicBitmapDecoder.CreateAsync(randomAccessStream);
-        return await decoder.GetSoftwareBitmapAsync(
+        var softwareBitmap = new Windows.Graphics.Imaging.SoftwareBitmap(
             Windows.Graphics.Imaging.BitmapPixelFormat.Bgra8,
+            width,
+            height,
             Windows.Graphics.Imaging.BitmapAlphaMode.Premultiplied);
+        softwareBitmap.CopyFromBuffer(pixels.AsBuffer());
+        return softwareBitmap;
     }
 }
