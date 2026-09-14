@@ -1,9 +1,8 @@
-using System.IO;
+using System.Runtime.InteropServices.WindowsRuntime;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Windows.Globalization;
 using Windows.Media.Ocr;
-using Windows.Storage.Streams;
-using WicBitmapDecoder = Windows.Graphics.Imaging.BitmapDecoder;
 
 namespace ArknightsRecruitRecommender.Services;
 
@@ -60,7 +59,7 @@ public sealed class TagOcrService
     public async Task<IReadOnlyList<DetectedTag>> RecognizeAsync(BitmapSource capturedFrame, int normalizedWidth = NormalizedWidth)
     {
         var normalized = NormalizeWidth(capturedFrame, normalizedWidth);
-        var softwareBitmap = await ConvertToSoftwareBitmapAsync(normalized);
+        var softwareBitmap = ConvertToSoftwareBitmap(normalized);
         var result = await _engine.RecognizeAsync(softwareBitmap);
 
         var words = new List<DetectedTag>();
@@ -116,24 +115,32 @@ public sealed class TagOcrService
         return transformed;
     }
 
-    private static async Task<Windows.Graphics.Imaging.SoftwareBitmap> ConvertToSoftwareBitmapAsync(BitmapSource source)
+    /// <summary>
+    /// WPFのBitmapSourceからWinRTのSoftwareBitmapへ、生のピクセルバイト列を直接コピーして
+    /// 変換する。以前はPNGへエンコードしてからWinRT側で再デコードする往復方式だったが、
+    /// 実測で圧縮・展開のコストがOCR本体(RecognizeAsync)より支配的だったため
+    /// (Issue #29)、圧縮を経由しないこの方式に置き換えた。
+    /// </summary>
+    private static Windows.Graphics.Imaging.SoftwareBitmap ConvertToSoftwareBitmap(BitmapSource source)
     {
-        using var stream = new MemoryStream();
-        BitmapPngCodec.Encode(source, stream);
-        stream.Position = 0;
+        // WinRT側が要求するBgra8+Premultipliedと一致するPbgra32へ、必要な場合のみ変換する
+        // (キャプチャ・正規化後のBitmapSourceが既にPbgra32であるケースの無駄な変換を避ける)。
+        var pbgra32Source = source.Format == PixelFormats.Pbgra32
+            ? source
+            : new FormatConvertedBitmap(source, PixelFormats.Pbgra32, null, 0);
 
-        using var randomAccessStream = new InMemoryRandomAccessStream();
-        using (var writer = new DataWriter(randomAccessStream.GetOutputStreamAt(0)))
-        {
-            writer.WriteBytes(stream.ToArray());
-            await writer.StoreAsync();
-            await writer.FlushAsync();
-            writer.DetachStream();
-        }
+        var width = pbgra32Source.PixelWidth;
+        var height = pbgra32Source.PixelHeight;
+        var stride = width * 4;
+        var pixels = new byte[stride * height];
+        pbgra32Source.CopyPixels(pixels, stride, 0);
 
-        var decoder = await WicBitmapDecoder.CreateAsync(randomAccessStream);
-        return await decoder.GetSoftwareBitmapAsync(
+        var softwareBitmap = new Windows.Graphics.Imaging.SoftwareBitmap(
             Windows.Graphics.Imaging.BitmapPixelFormat.Bgra8,
+            width,
+            height,
             Windows.Graphics.Imaging.BitmapAlphaMode.Premultiplied);
+        softwareBitmap.CopyFromBuffer(pixels.AsBuffer());
+        return softwareBitmap;
     }
 }

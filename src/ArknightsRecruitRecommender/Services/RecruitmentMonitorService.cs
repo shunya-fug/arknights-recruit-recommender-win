@@ -8,12 +8,18 @@ public sealed class RecruitmentMonitorService : IDisposable
 {
     // 実機確認済み: PC版アークナイツの実行ファイル名(表示言語に関わらず共通)。
     private const string GameProcessName = "Arknights";
-    // 実機計測(Issue #6調査): capture+OCR+判定の合計処理時間は通常190〜230ms程度(稀に
-    // 250ms超)。以前は200msだったが、これだと1ティックの処理がポーリング間隔を超えてしまい、
-    // 次のティックが(_checkGateが空くまで)スキップされ続け、実質的なポーリング間隔が
-    // 意図した200msの倍(約400ms)まで悪化していた。実測の処理時間に対して余裕を持たせるため
-    // 300msに緩めた(OCR自体を縮小して高速化する案もあったが、精度とのトレードオフになる
-    // ため見送り、素直に間隔を実測値に合わせる方を選んだ)。
+    // 実機計測(Issue #6調査、当時): capture+OCR+判定の合計処理時間は通常190〜230ms程度
+    // (稀に250ms超)だった。以前は200msだったが、これだと1ティックの処理がポーリング間隔を
+    // 超えてしまい、次のティックが(_checkGateが空くまで)スキップされ続け、実質的なポーリング
+    // 間隔が意図した200msの倍(約400ms)まで悪化していた。実測の処理時間に対して余裕を
+    // 持たせるため300msに緩めていた。
+    //
+    // 実機再計測(Issue #29対応後): BitmapSource→SoftwareBitmap変換をPNG往復無しの方式に
+    // 変更したことで、フォールバック幅リトライ(FallbackNormalizedWidth参照、2回分のOCRを
+    // 伴う最も重いケース)込みでも合計209〜397ms(中央値232ms付近)まで縮んだ。フォールバックが
+    // 発火しない通常ケースはさらに軽いと見込まれる(未計測)。間隔を数十ms詰める案も検討したが、
+    // 詰めた分の体感差はほぼ無い一方、外れ値(300ms超)でティックがスキップされて実質的な
+    // ポーリング間隔が悪化するリスクの方が実害として大きいと判断し、300msのまま据え置いた。
     private static readonly TimeSpan PollInterval = TimeSpan.FromMilliseconds(300);
     private static readonly TimeSpan FirstFrameTimeout = TimeSpan.FromMilliseconds(100);
 
