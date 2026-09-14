@@ -52,9 +52,14 @@ public sealed class TagOcrService
     private static string PrimarySubtag(string languageTag) =>
         languageTag.Split('-')[0].ToLowerInvariant();
 
-    public async Task<IReadOnlyList<DetectedTag>> RecognizeAsync(BitmapSource capturedFrame)
+    /// <param name="normalizedWidth">
+    /// OCRに渡す前に正規化する幅。省略時は<see cref="NormalizedWidth"/>(既定の1920px)。
+    /// 特定のタグ(例:「治療」)は1920px幅では構造的に検出できないことが実機検証で判明して
+    /// おり(Issue #4)、呼び出し側がその疑いがある場合に別の幅を指定して再試行できるようにする。
+    /// </param>
+    public async Task<IReadOnlyList<DetectedTag>> RecognizeAsync(BitmapSource capturedFrame, int normalizedWidth = NormalizedWidth)
     {
-        var normalized = NormalizeWidth(capturedFrame);
+        var normalized = NormalizeWidth(capturedFrame, normalizedWidth);
         var softwareBitmap = await ConvertToSoftwareBitmapAsync(normalized);
         var result = await _engine.RecognizeAsync(softwareBitmap);
 
@@ -90,22 +95,22 @@ public sealed class TagOcrService
     }
 
     /// <summary>
-    /// キャプチャ画像をNormalizedWidthへ正規化する(アスペクト比は保持)。詳細はフィールドの
-    /// コメント参照。
+    /// キャプチャ画像を指定の幅へ正規化する(アスペクト比は保持)。既定幅についての詳細は
+    /// フィールドのコメント参照。
     /// </summary>
-    private static BitmapSource NormalizeWidth(BitmapSource source)
+    private static BitmapSource NormalizeWidth(BitmapSource source, int targetWidth)
     {
         // PixelWidthが0(何らかの理由で縦横比が壊れた不正なフレーム)の場合、スケール計算が
         // InfinityになりTransformedBitmapの生成で例外になる。呼び出し元(RecruitmentMonitor
         // Service.TickAsync)は例外を捕捉して1ティック分スキップするだけだが、そもそも
         // 正規化しようがないフレームなので、ここで早期に諦めて元のフレームをそのまま返す方が
         // 意図が明確。
-        if (source.PixelWidth <= 0 || source.PixelWidth == NormalizedWidth)
+        if (source.PixelWidth <= 0 || source.PixelWidth == targetWidth)
         {
             return source;
         }
 
-        var scale = (double)NormalizedWidth / source.PixelWidth;
+        var scale = (double)targetWidth / source.PixelWidth;
         var transformed = new TransformedBitmap(source, new System.Windows.Media.ScaleTransform(scale, scale));
         transformed.Freeze();
         return transformed;
