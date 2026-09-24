@@ -67,8 +67,12 @@ public partial class App : Application
         // Windowsが起動中カーソル(ローディング表示)を出し続けてしまう。トレイアイコンの
         // 表示を優先し、メッセージループが動き出した直後に非同期で開始することで、
         // 起動時のカーソル表示を短縮する。
+        // RefreshStartupRegistrationPathIfNeeded()のレジストリ書き込みも通常は1ms未満だが、
+        // ウイルス対策ソフトによるフック等で遅くなる可能性はゼロではないため、同じ理由で
+        // ここに合わせて遅延させる。
         Dispatcher.BeginInvoke(new Action(() =>
         {
+            RefreshStartupRegistrationPathIfNeeded();
             StartMonitor();
             DiagnosticLog.Write("[起動] 監視サービス初期化完了(D3D11デバイス・OCRエンジン作成を含む)");
         }), DispatcherPriority.Background);
@@ -425,6 +429,24 @@ public partial class App : Application
     // ログイン時にそのビルドを起動しようとし続ける(削除後は起動に失敗する)不具合につながる。
     private static readonly string StartupRegistryValueName =
         AppDataPaths.IsLocalDevOrTest ? "ArknightsRecruitRecommender.Debug" : "ArknightsRecruitRecommender";
+
+    /// <summary>
+    /// 自動起動が既に有効な場合、レジストリの起動パスを現在実行中のexeのパスへ上書きする
+    /// (自己修復)。このアプリはインストーラを持たず、リリースのたびに別フォルダへ展開する
+    /// 運用のため、パスをexe移動・バージョン更新のたびに手動で登録し直す必要がある(登録済み
+    /// フラグはレジストリの値の有無だけで判定しているため、古いパスのままでも「有効」に
+    /// 見えてしまい気づきにくい)。アプリを起動するたびにこの処理を通すことで、ユーザーが
+    /// 移動先・新バージョンを一度でも手動起動すれば古いパス情報が残り続けることはない。
+    /// (一度も手動起動しないままexeを移動・削除した場合は対象外。この処理自体が実行されない
+    /// ため)。
+    /// </summary>
+    private static void RefreshStartupRegistrationPathIfNeeded()
+    {
+        if (IsRegisteredForStartup())
+        {
+            SetStartupRegistration(true);
+        }
+    }
 
     /// <summary>
     /// 「Windows起動時に自動起動」トグル。AppSettingsには独自の状態を持たず、
