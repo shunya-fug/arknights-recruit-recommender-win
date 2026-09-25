@@ -131,8 +131,9 @@ public partial class PreviewWindow : Window
             : combinations.Select(FormatCombination).ToList();
 
         // 通知ウィンドウには本番と同じく「おすすめ」だけを表示する。全組み合わせの内訳は
-        // 上のResultsListBox側(このプレビュー専用)で確認する。
-        _notificationWindow.ShowResults(combinations.Where(c => c.IsRecommended).ToList());
+        // 上のResultsListBox側(このプレビュー専用)で確認する。選択中のタグをそのまま
+        // 検出タグとして渡し、Issue #26 Stage 1の表示もこのツールでプレビューできるようにする。
+        _notificationWindow.ShowResults(selectedTags, combinations.Where(c => c.IsRecommended).ToList());
     }
 
     private static string FormatCombination(CombinationResult c) =>

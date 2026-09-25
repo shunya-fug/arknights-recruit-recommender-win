@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Media;
 using ArknightsRecruitRecommender.Models;
+using ArknightsRecruitRecommender.Services;
 
 namespace ArknightsRecruitRecommender.Views;
 
@@ -18,6 +19,18 @@ public partial class NotificationWindow : Window
     // 対象オペレーターが多い組み合わせ(例:★4以上確定のプール)で通知が縦に伸びすぎないよう、
     // 名前の列挙はここまでにして残りは「他N名」とまとめる。
     private const int MaxOperatorNamesShown = 6;
+
+    // ゲーム側の仕様上、募集条件のタグ枠は常に5〜6個表示される(RecruitmentMonitorService
+    // 参照)。検出数がこれ未満の場合は、OCRが1個以上見落としていることが確実なので、
+    // 気づきやすいよう警告表示にする(5個ちょうどの場合は「5個で全部」か「6個中5個」かを
+    // 区別できないため対象外)。
+    private const int MinExpectedTagCount = 5;
+
+    // 警告表示は、公開求人画面らしさの最低ライン(RecruitmentMonitorService参照。手動チェックは
+    // 画面がどこかを問わず実行できるため、この下限を使わないと無関係な画面で偶然1〜3個
+    // 一致しただけでも「検出できていないタグがあります」と誤って表示してしまう)以上
+    // 検出できている場合に限る。0〜3個は「検出タグ: (一致なし)」や単なるタグ一覧と同様、
+    // 画面自体が違う可能性の方が高いため警告なしで淡々と表示する。
 
     private NotificationPosition _position;
 
@@ -80,12 +93,13 @@ public partial class NotificationWindow : Window
 
     /// <summary>
     /// おすすめの組み合わせが0件の場合も明示的に「無し」と表示する。判定中(まだ何も
-    /// 表示されていない)状態と区別できるようにするため。
+    /// 表示されていない)状態と区別できるようにするため。matchedTagsは、OCRが実際に何を
+    /// 検出したかを常時監視の通知でも確認できるようにするため(Issue #26 Stage 1)。
     /// </summary>
-    public void ShowResults(IReadOnlyList<CombinationResult> results)
+    public void ShowResults(IReadOnlyList<string> matchedTags, IReadOnlyList<CombinationResult> results)
     {
         TitleText.Text = "おすすめタグ一覧";
-        DebugSummaryText.Visibility = Visibility.Collapsed;
+        UpdateDetectedTagsText(matchedTags);
         RenderResults(results);
         RevealNotification();
     }
@@ -93,17 +107,29 @@ public partial class NotificationWindow : Window
     /// <summary>
     /// おすすめ組み合わせの算出はタグさえ正しく検出できれば決まる静的なロジックのため、
     /// 手動チェックでも通常の自動検出(<see cref="ShowResults"/>)と同じ「おすすめのみ」を表示する。
-    /// 検出タグ一覧だけは、OCR・照合の動作確認のために全件表示する。
     /// </summary>
     public void ShowDebugResult(RecruitmentCheckResult result)
     {
         TitleText.Text = "手動チェック結果";
-        DebugSummaryText.Text = result.MatchedTags.Count == 0
-            ? "検出タグ: (一致なし)"
-            : $"検出タグ: {string.Join(" / ", result.MatchedTags)}";
-        DebugSummaryText.Visibility = Visibility.Visible;
+        UpdateDetectedTagsText(result.MatchedTags);
         RenderResults(result.Combinations.Where(r => r.IsRecommended).ToList());
         RevealNotification();
+    }
+
+    private void UpdateDetectedTagsText(IReadOnlyList<string> matchedTags)
+    {
+        if (matchedTags.Count == 0)
+        {
+            DetectedTagsText.Text = "検出タグ: (一致なし)";
+            DetectedTagsText.Foreground = DetectedTagsNormalBrush;
+            return;
+        }
+
+        var isIncomplete = matchedTags.Count is >= RecruitmentMonitorService.MinMatchedTagsForRecruitmentScreen and < MinExpectedTagCount;
+        DetectedTagsText.Text = isIncomplete
+            ? $"検出タグ: {string.Join(" / ", matchedTags)}\n⚠検出できていないタグがあります"
+            : $"検出タグ: {string.Join(" / ", matchedTags)}";
+        DetectedTagsText.Foreground = isIncomplete ? DetectedTagsWarningBrush : DetectedTagsNormalBrush;
     }
 
     /// <summary>
@@ -192,6 +218,11 @@ public partial class NotificationWindow : Window
     private static readonly SolidColorBrush Rarity5Brush = Freeze(0xFF, 0xFF, 0xD5, 0x4F);
     private static readonly SolidColorBrush Rarity4Brush = Freeze(0xFF, 0xC0, 0x92, 0xFF);
     private static readonly SolidColorBrush FallbackRarityBrush = Freeze(0xFF, 0x9E, 0x9E, 0x9E);
+
+    // 検出タグ一覧の文字色。既存のレアリティ配色(オレンジ/黄/紫)と紛れないよう、警告色には
+    // 赤系を使う。
+    private static readonly SolidColorBrush DetectedTagsNormalBrush = Freeze(0xFF, 0xB0, 0xBE, 0xC5);
+    private static readonly SolidColorBrush DetectedTagsWarningBrush = Freeze(0xFF, 0xFF, 0x52, 0x52);
 
     // オペレーターチップ用の低不透明度版。枠線だとカード全体の枠線と同じ見た目で紛らわしい
     // (ユーザー指摘)ため、チップ側はごく薄い塗りつぶしにして視覚的な階層を分けている。
