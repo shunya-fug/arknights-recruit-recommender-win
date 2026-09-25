@@ -31,7 +31,10 @@ public sealed class RecruitmentMonitorService : IDisposable
     // (例:「元素耐性」「防御力を400無視」「遠距離術」からそれぞれ元素/防御/遠距離が一致し、
     // 3タグ揃って「おすすめ」判定になった)。実際の公開求人画面ではOCRの読み落としが1個程度
     // 発生しても4〜5個は検出できている実績があるため、4に引き上げて誤検出との差を広げた。
-    private const int MinMatchedTagsForRecruitmentScreen = 4;
+    // NotificationWindow(検出タグ数が少ない場合の警告表示、Issue #26 Stage 1)からも同じ
+    // 閾値を参照するため、privateではなくinternalにしている(2箇所に同じ値を書いて将来
+    // ズレることを防ぐため)。
+    internal const int MinMatchedTagsForRecruitmentScreen = 4;
 
     // 公開求人画面のタグ枠は実際には5〜6個あるため(上のコメント参照)、検出数がちょうど
     // MinMatchedTagsForRecruitmentScreenと同数(=ぎりぎり閾値を満たしただけ)の場合は、
@@ -84,8 +87,9 @@ public sealed class RecruitmentMonitorService : IDisposable
     /// 公開求人画面で検出タグの組み合わせが変わるたびに発火する(おすすめの組み合わせが
     /// 無い場合も含む)。「おすすめ無し」を判定中(まだOCR結果が確定していない)と区別できる
     /// よう、購読側は空リストの場合も「該当なし」として明示的に表示すること。
+    /// matchedTagsは、OCR・照合の結果を通知側でも確認できるようにするため(Issue #26 Stage 1)。
     /// </summary>
-    public event Action<IReadOnlyList<CombinationResult>>? RecommendationsUpdated;
+    public event Action<IReadOnlyList<string>, IReadOnlyList<CombinationResult>>? RecommendationsUpdated;
 
     /// <summary>
     /// 公開求人のタグ選択画面を検出できなくなった(＝タグ一致数が閾値未満になった、または
@@ -259,7 +263,7 @@ public sealed class RecruitmentMonitorService : IDisposable
             {
                 _lastVisibleTags = result.MatchedTags;
                 _pendingNoRecommendationTags = null;
-                RecommendationsUpdated?.Invoke(goodCombinations);
+                RecommendationsUpdated?.Invoke(result.MatchedTags, goodCombinations);
                 return;
             }
 
@@ -269,7 +273,7 @@ public sealed class RecruitmentMonitorService : IDisposable
             {
                 _lastVisibleTags = result.MatchedTags;
                 _pendingNoRecommendationTags = null;
-                RecommendationsUpdated?.Invoke(goodCombinations);
+                RecommendationsUpdated?.Invoke(result.MatchedTags, goodCombinations);
             }
             else
             {

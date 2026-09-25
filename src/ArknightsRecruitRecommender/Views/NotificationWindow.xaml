@@ -71,13 +71,13 @@
                         Click="CloseButton_Click" />
             </Grid>
 
-            <!-- 手動チェック時のみ表示する検出タグの全件サマリ(通常の自動検出では非表示)。 -->
-            <TextBlock x:Name="DebugSummaryText"
-                       Foreground="#FFB0BEC5"
+            <!-- OCRで検出されたタグの一覧(自動検出・手動チェックいずれでも常に表示、Issue #26 Stage 1)。
+                 Foregroundはコードビハインド(UpdateDetectedTagsText)で毎回設定するためここでは
+                 指定しない(通常色/警告色どちらになるかは検出タグ数に応じて実行時に決まる)。 -->
+            <TextBlock x:Name="DetectedTagsText"
                        FontSize="12"
                        TextWrapping="Wrap"
-                       Margin="0,0,0,6"
-                       Visibility="Collapsed" />
+                       Margin="0,0,0,6" />
 
             <TextBlock x:Name="NoResultsText"
                        Text="おすすめの組み合わせはありません"

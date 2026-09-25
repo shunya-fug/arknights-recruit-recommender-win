@@ -178,8 +178,8 @@ public partial class App : Application
     private void StartMonitor()
     {
         _monitor = new RecruitmentMonitorService(_settings.Locale);
-        _monitor.RecommendationsUpdated += results =>
-            Dispatcher.Invoke(() => _notificationWindow!.ShowResults(results));
+        _monitor.RecommendationsUpdated += (matchedTags, results) =>
+            Dispatcher.Invoke(() => _notificationWindow!.ShowResults(matchedTags, results));
         _monitor.RecruitmentScreenLost += () =>
             Dispatcher.Invoke(() => _notificationWindow!.HideNotification());
     }
