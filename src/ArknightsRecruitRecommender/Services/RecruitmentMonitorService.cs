@@ -120,6 +120,18 @@ public sealed class RecruitmentMonitorService : IDisposable
     /// 同時に発生しても<see cref="_captureService"/>の内部状態が競合することはない。
     /// </summary>
     /// <returns>ゲームウィンドウが見つからない、またはフレームを取得できなかった場合はnull。</returns>
+    /// <summary>
+    /// 既知タグの全件一覧(タグの手動編集UIで選択肢として使う、Issue #32)。
+    /// </summary>
+    public IReadOnlyList<string> KnownTags => _knownTags;
+
+    /// <summary>
+    /// ユーザーが手動で選んだタグの組み合わせを、OCR結果を介さず直接判定する(Issue #32)。
+    /// ロジック自体は常時監視・手動チェックと同じ<see cref="RecruitmentAnalyzer"/>を再利用する。
+    /// </summary>
+    public IReadOnlyList<CombinationResult> EvaluateManualTags(IReadOnlyList<string> tags) =>
+        _analyzer.Evaluate(tags, _operators);
+
     public async Task<RecruitmentCheckResult?> CheckOnceAsync()
     {
         await _checkGate.WaitAsync();
