@@ -48,6 +48,7 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <TextBlock x:Name="TitleText"
                            Grid.Column="0"
@@ -56,8 +57,26 @@
                            FontWeight="Bold"
                            FontSize="13"
                            VerticalAlignment="Center" />
-                <Button x:Name="CloseButton"
+                <!-- OCRの誤検出・検出漏れをユーザー自身が補正するための入口(Issue #32)。
+                     Segoe MDL2 Assets(Win10/11標準)の鉛筆グリフ(E70F)。アイコンだけだと用途が
+                     分かりにくいためツールチップで補う。 -->
+                <Button x:Name="EditTagsButton"
                         Grid.Column="1"
+                        Content="&#xE70F;"
+                        FontFamily="Segoe MDL2 Assets"
+                        ToolTip="タグを編集"
+                        Width="20"
+                        Height="20"
+                        Padding="0"
+                        Margin="6,0,0,0"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Foreground="White"
+                        FontSize="12"
+                        Cursor="Hand"
+                        Click="EditTagsButton_Click" />
+                <Button x:Name="CloseButton"
+                        Grid.Column="2"
                         Content="×"
                         Width="20"
                         Height="20"
@@ -71,13 +90,45 @@
                         Click="CloseButton_Click" />
             </Grid>
 
-            <!-- OCRで検出されたタグの一覧(自動検出・手動チェックいずれでも常に表示、Issue #26 Stage 1)。
-                 Foregroundはコードビハインド(UpdateDetectedTagsText)で毎回設定するためここでは
-                 指定しない(通常色/警告色どちらになるかは検出タグ数に応じて実行時に決まる)。 -->
+            <!-- OCRで検出されたタグの一覧(自動検出・手動チェックいずれでも常に表示、Issue #26
+                 Stage 1)。Foregroundはコードビハインド(UpdateDetectedTagsText)で毎回設定する
+                 ためここでは指定しない(通常色/警告色どちらになるかは検出タグ数に応じて
+                 実行時に決まる)。 -->
             <TextBlock x:Name="DetectedTagsText"
                        FontSize="12"
                        TextWrapping="Wrap"
                        Margin="0,0,0,6" />
+
+            <!-- 手動でタグを補正した間、自動検出との食い違いに気づけるようにする注記(Issue #32)。
+                 手動モード中のみVisibleにする(コードビハインドで切り替え)。 -->
+            <Grid x:Name="ManualModeNotice" Visibility="Collapsed" Margin="0,0,0,6">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0"
+                           Text="タグを手動選択しているため検出結果は更新されません"
+                           Foreground="#FFFF5252"
+                           FontSize="11"
+                           TextWrapping="Wrap"
+                           VerticalAlignment="Center" />
+                <!-- Segoe MDL2 Assets(Win10/11標準)の更新グリフ(E72C)。 -->
+                <Button x:Name="RefreshButton"
+                        Grid.Column="1"
+                        Content="&#xE72C;"
+                        FontFamily="Segoe MDL2 Assets"
+                        ToolTip="自動検出に戻して更新"
+                        Width="20"
+                        Height="20"
+                        Padding="0"
+                        Margin="6,0,0,0"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Foreground="White"
+                        FontSize="12"
+                        Cursor="Hand"
+                        Click="RefreshButton_Click" />
+            </Grid>
 
             <TextBlock x:Name="NoResultsText"
                        Text="おすすめの組み合わせはありません"

@@ -20,6 +20,10 @@ public partial class App : Application
     private TaskbarIcon? _trayIcon;
     private RecruitmentMonitorService? _monitor;
     private NotificationWindow? _notificationWindow;
+
+    // タグ編集ウィンドウ(Issue #32)。同時に2つ開けないよう、開いている間はこのフィールドで
+    // 参照を保持し、再度「タグを編集」が押されたら新規に開かず既存のウィンドウを前面に出す。
+    private TagEditWindow? _tagEditWindow;
     private AppSettings _settings = AppSettings.Default;
     private System.Threading.Timer? _updateCheckTimer;
     private System.Windows.Controls.MenuItem? _versionMenuItem;
@@ -182,6 +186,32 @@ public partial class App : Application
             Dispatcher.Invoke(() => _notificationWindow!.ShowResults(matchedTags, results));
         _monitor.RecruitmentScreenLost += () =>
             Dispatcher.Invoke(() => _notificationWindow!.HideNotification());
+        // EditTagsButton_Clickの延長でUIスレッドから直接発火するため、RecommendationsUpdated等と
+        // 違いDispatcher.Invokeは不要。
+        _notificationWindow!.TagEditRequested += OnTagEditRequested;
+    }
+
+    /// <summary>
+    /// 「タグを編集」(Issue #32)でタグ編集ウィンドウを開く。既に開いている場合は新規に
+    /// 開かず前面に出す(1つのアプリにつき通知ウィンドウは1つなので、編集対象が競合しないため
+    /// 複数同時に開く必要が無い)。
+    /// </summary>
+    private void OnTagEditRequested(IReadOnlyList<string> tagsAtOpen)
+    {
+        if (_tagEditWindow is not null)
+        {
+            _tagEditWindow.Activate();
+            return;
+        }
+
+        _tagEditWindow = new TagEditWindow(_monitor!.KnownTags, tagsAtOpen);
+        _tagEditWindow.Confirmed += selectedTags =>
+        {
+            var recommended = _monitor!.EvaluateManualTags(selectedTags).Where(c => c.IsRecommended).ToList();
+            _notificationWindow!.ApplyTagEditResult(tagsAtOpen, selectedTags, recommended);
+        };
+        _tagEditWindow.Closed += (_, _) => _tagEditWindow = null;
+        _tagEditWindow.Show();
     }
 
     private System.Windows.Controls.ContextMenu BuildContextMenu()

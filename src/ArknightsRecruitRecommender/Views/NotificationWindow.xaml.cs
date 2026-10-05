@@ -20,11 +20,10 @@ public partial class NotificationWindow : Window
     // 名前の列挙はここまでにして残りは「他N名」とまとめる。
     private const int MaxOperatorNamesShown = 6;
 
-    // ゲーム側の仕様上、募集条件のタグ枠は常に5〜6個表示される(RecruitmentMonitorService
-    // 参照)。検出数がこれ未満の場合は、OCRが1個以上見落としていることが確実なので、
-    // 気づきやすいよう警告表示にする(5個ちょうどの場合は「5個で全部」か「6個中5個」かを
-    // 区別できないため対象外)。
-    private const int MinExpectedTagCount = 5;
+    // ゲーム側の仕様上、募集条件のタグ枠は最大5個表示される(RecruitmentMonitorService.
+    // MaxTagsOnRecruitmentScreen参照)。検出数がこれ未満の場合は、OCRが1個以上見落として
+    // いることが確実なので、気づきやすいよう警告表示にする。
+    private const int MinExpectedTagCount = RecruitmentMonitorService.MaxTagsOnRecruitmentScreen;
 
     // 警告表示は、公開求人画面らしさの最低ライン(RecruitmentMonitorService参照。手動チェックは
     // 画面がどこかを問わず実行できるため、この下限を使わないと無関係な画面で偶然1〜3個
@@ -43,6 +42,21 @@ public partial class NotificationWindow : Window
 
     // ウィンドウ自体のShow()は最初の通知表示時に一度だけ行い、以後はHide()せず出したままにする。
     private bool _windowShown;
+
+    // 現在画面に表示しているタグ一覧(自動検出/手動選択いずれか)。「タグを編集」を押した時の
+    // 初期選択状態として使う(Issue #32)。
+    private IReadOnlyList<string> _displayedTags = Array.Empty<string>();
+
+    // タグを手動補正した結果を表示している間はtrue。この間は常時監視からの自動更新を
+    // 画面に反映しない(_lastAutoMatchedTags/_lastAutoResultsに溜めておき、「更新」ボタンで
+    // 反映する)。手動選択と自動検出が食い違ったままだと気づきにくいため、ManualModeNoticeで
+    // 常に明示する(Issue #32)。
+    private bool _isManualMode;
+    private IReadOnlyList<string> _lastAutoMatchedTags = Array.Empty<string>();
+    private IReadOnlyList<CombinationResult> _lastAutoResults = Array.Empty<CombinationResult>();
+
+    /// <summary>「タグを編集」が押された時に、その時点の表示タグ一覧を添えて発火する。</summary>
+    public event Action<IReadOnlyList<string>>? TagEditRequested;
 
     public NotificationWindow(NotificationPosition position)
     {
@@ -98,8 +112,19 @@ public partial class NotificationWindow : Window
     /// </summary>
     public void ShowResults(IReadOnlyList<string> matchedTags, IReadOnlyList<CombinationResult> results)
     {
+        _lastAutoMatchedTags = matchedTags;
+        _lastAutoResults = results;
+
+        if (_isManualMode)
+        {
+            // 手動モード中は自動更新を画面に反映しない(ManualModeNoticeのコメント参照)。
+            // 「更新」ボタンが押されたらこのキャッシュを使って反映する。
+            return;
+        }
+
         TitleText.Text = "おすすめタグ一覧";
-        UpdateDetectedTagsText(matchedTags);
+        _displayedTags = matchedTags;
+        UpdateDetectedTagsText(matchedTags, isManual: false);
         RenderResults(results);
         RevealNotification();
     }
@@ -107,28 +132,90 @@ public partial class NotificationWindow : Window
     /// <summary>
     /// おすすめ組み合わせの算出はタグさえ正しく検出できれば決まる静的なロジックのため、
     /// 手動チェックでも通常の自動検出(<see cref="ShowResults"/>)と同じ「おすすめのみ」を表示する。
+    /// ユーザーが明示的に実行した操作のため、タグ手動補正中(Issue #32)であっても優先して
+    /// 現在の実際の検出結果を表示する(手動モードは終了する)。
     /// </summary>
     public void ShowDebugResult(RecruitmentCheckResult result)
     {
+        ExitManualMode();
         TitleText.Text = "手動チェック結果";
-        UpdateDetectedTagsText(result.MatchedTags);
-        RenderResults(result.Combinations.Where(r => r.IsRecommended).ToList());
+        var recommended = result.Combinations.Where(r => r.IsRecommended).ToList();
+
+        // 手動チェックの結果も「直近の実際の検出結果」なので、自動検出のキャッシュとして保持する。
+        // これを更新しないと、手動チェック結果を表示中に「タグを編集」→「更新」を押した際、
+        // 手動チェックとは無関係な古い(または空の)自動検出結果へ戻ってしまう。
+        _lastAutoMatchedTags = result.MatchedTags;
+        _lastAutoResults = recommended;
+
+        _displayedTags = result.MatchedTags;
+        UpdateDetectedTagsText(result.MatchedTags, isManual: false);
+        RenderResults(recommended);
         RevealNotification();
     }
 
-    private void UpdateDetectedTagsText(IReadOnlyList<string> matchedTags)
+    /// <summary>
+    /// タグ編集ウィンドウ(<see cref="TagEditWindow"/>)で「確定」が押された結果を反映する
+    /// (Issue #32)。編集ウィンドウを開いた時点のタグ一覧と選択結果が一致する場合、ユーザーは
+    /// 実質何も変更しなかったとみなし、現在のモード(自動/手動)を維持したまま何もしない。
+    /// </summary>
+    public void ApplyTagEditResult(IReadOnlyList<string> tagsAtEditOpen, IReadOnlyList<string> selectedTags, IReadOnlyList<CombinationResult> results)
     {
-        if (matchedTags.Count == 0)
+        if (new HashSet<string>(selectedTags).SetEquals(tagsAtEditOpen))
+        {
+            return;
+        }
+
+        _isManualMode = true;
+        _displayedTags = selectedTags;
+        TitleText.Text = "おすすめタグ一覧";
+        UpdateDetectedTagsText(selectedTags, isManual: true);
+        RenderResults(results);
+        ManualModeNotice.Visibility = Visibility.Visible;
+        RevealNotification();
+    }
+
+    private void EditTagsButton_Click(object sender, RoutedEventArgs e) => TagEditRequested?.Invoke(_displayedTags);
+
+    /// <summary>
+    /// 手動モードを終了し、直近の自動検出結果(常時監視が裏側で更新し続けていたもの)を
+    /// 表示に反映する(Issue #32)。
+    /// </summary>
+    private void RefreshButton_Click(object sender, RoutedEventArgs e)
+    {
+        ExitManualMode();
+        TitleText.Text = "おすすめタグ一覧";
+        _displayedTags = _lastAutoMatchedTags;
+        UpdateDetectedTagsText(_lastAutoMatchedTags, isManual: false);
+        RenderResults(_lastAutoResults);
+    }
+
+    private void ExitManualMode()
+    {
+        _isManualMode = false;
+        ManualModeNotice.Visibility = Visibility.Collapsed;
+    }
+
+    private void UpdateDetectedTagsText(IReadOnlyList<string> tags, bool isManual)
+    {
+        if (isManual)
+        {
+            // 手動で選んだタグなので、OCRの検出漏れを示す警告は意味を持たないため出さない。
+            DetectedTagsText.Text = tags.Count == 0 ? "選択タグ: (なし)" : $"選択タグ: {string.Join(" / ", tags)}";
+            DetectedTagsText.Foreground = DetectedTagsNormalBrush;
+            return;
+        }
+
+        if (tags.Count == 0)
         {
             DetectedTagsText.Text = "検出タグ: (一致なし)";
             DetectedTagsText.Foreground = DetectedTagsNormalBrush;
             return;
         }
 
-        var isIncomplete = matchedTags.Count is >= RecruitmentMonitorService.MinMatchedTagsForRecruitmentScreen and < MinExpectedTagCount;
+        var isIncomplete = tags.Count is >= RecruitmentMonitorService.MinMatchedTagsForRecruitmentScreen and < MinExpectedTagCount;
         DetectedTagsText.Text = isIncomplete
-            ? $"検出タグ: {string.Join(" / ", matchedTags)}\n⚠検出できていないタグがあります"
-            : $"検出タグ: {string.Join(" / ", matchedTags)}";
+            ? $"検出タグ: {string.Join(" / ", tags)}\n⚠検出できていないタグがあります"
+            : $"検出タグ: {string.Join(" / ", tags)}";
         DetectedTagsText.Foreground = isIncomplete ? DetectedTagsWarningBrush : DetectedTagsNormalBrush;
     }
 
@@ -156,8 +243,14 @@ public partial class NotificationWindow : Window
     /// <summary>
     /// 通知の中身を隠す。ウィンドウ自体はHide()せず出したままにする(理由は<see cref="RevealNotification"/>
     /// のコメント参照)。トレイメニューの×ボタンと、求人画面から離れたタイミングの両方から呼ばれる。
+    /// 次に通知が表示される時は常に自動モードから始めるよう、手動モードもここでリセットする
+    /// (Issue #32)。
     /// </summary>
-    public void HideNotification() => RootBorder.Visibility = Visibility.Collapsed;
+    public void HideNotification()
+    {
+        RootBorder.Visibility = Visibility.Collapsed;
+        ExitManualMode();
+    }
 
     private void RenderResults(IReadOnlyList<CombinationResult> results)
     {
