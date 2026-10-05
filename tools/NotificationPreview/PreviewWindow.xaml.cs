@@ -1,6 +1,5 @@
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
 using ArknightsRecruitRecommender.Models;
 using ArknightsRecruitRecommender.Services;
 using ArknightsRecruitRecommender.Views;
@@ -14,16 +13,18 @@ namespace NotificationPreview;
 /// </summary>
 public partial class PreviewWindow : Window
 {
-    // 実機の公開求人画面は1枠あたり最大5個までしかタグを選べない仕様のため、このプレビューでも
-    // 選択数を5個までに制限する(超えるタグボタンは選択不可にする)。ランダム選択の個数も揃える。
-    private const int MaxSelectableTags = 5;
+    // 実機の公開求人画面に同時に表示されるタグは最大5個(RecruitmentMonitorService参照)のため、
+    // このプレビューでも選択数をそれまでに制限する(超えるタグボタンは選択不可にする)。
+    private const int MaxSelectableTags = RecruitmentMonitorService.MaxTagsOnRecruitmentScreen;
+
+    // 「ランダム5個」ボタンで選ぶ個数(実機の画面で多いのは5個)。
+    private const int RandomTagCount = 5;
 
     private readonly IReadOnlyList<OperatorInfo> _operators;
     private readonly IReadOnlyList<string> _knownTags;
     private readonly RecruitmentAnalyzer _analyzer = new();
     private readonly Random _random = new();
     private readonly NotificationWindow _notificationWindow = new(NotificationPosition.TopRight);
-    private readonly Dictionary<string, ToggleButton> _tagButtons = new();
 
     public PreviewWindow()
     {
@@ -32,7 +33,9 @@ public partial class PreviewWindow : Window
         _operators = new OperatorDataProvider("ja-JP").Load();
         _knownTags = OperatorDataProvider.GetAllKnownTags(_operators);
 
-        BuildTagButtons();
+        TagSelector.MaxSelectable = MaxSelectableTags;
+        TagSelector.SetTags(_knownTags);
+        TagSelector.SelectionChanged += UpdateResults;
         BuildPositionComboBox();
         UpdateResults();
 
@@ -40,23 +43,6 @@ public partial class PreviewWindow : Window
         // ×ボタンがHide()のみ(本番の挙動を再現するため)でClose()しないため、既定の
         // OnLastWindowCloseに任せると終了しない。
         Closed += (_, _) => Application.Current.Shutdown();
-    }
-
-    private void BuildTagButtons()
-    {
-        var style = (Style)FindResource("TagToggleStyle");
-
-        foreach (var tag in _knownTags)
-        {
-            var button = new ToggleButton
-            {
-                Content = tag,
-                Style = style,
-            };
-            button.Click += (_, _) => UpdateResults();
-            _tagButtons[tag] = button;
-            TagsPanel.Children.Add(button);
-        }
     }
 
     /// <summary>
@@ -83,26 +69,13 @@ public partial class PreviewWindow : Window
 
     private void RandomButton_Click(object sender, RoutedEventArgs e)
     {
-        foreach (var button in _tagButtons.Values)
-        {
-            button.IsChecked = false;
-        }
-
-        foreach (var tag in _knownTags.OrderBy(_ => _random.Next()).Take(MaxSelectableTags))
-        {
-            _tagButtons[tag].IsChecked = true;
-        }
-
+        TagSelector.SetSelection(_knownTags.OrderBy(_ => _random.Next()).Take(RandomTagCount));
         UpdateResults();
     }
 
     private void ClearButton_Click(object sender, RoutedEventArgs e)
     {
-        foreach (var button in _tagButtons.Values)
-        {
-            button.IsChecked = false;
-        }
-
+        TagSelector.ClearSelection();
         UpdateResults();
     }
 
@@ -111,16 +84,10 @@ public partial class PreviewWindow : Window
 
     private void UpdateResults()
     {
-        var selectedTags = _tagButtons.Where(kv => kv.Value.IsChecked == true).Select(kv => kv.Key).ToList();
+        // 選択数の上限(MaxSelectableTags)は、実機で選べない組み合わせを試せてしまわないよう
+        // TagSelectorPanel側で適用している(上限に達すると未選択のタグは選べなくなる)。
+        var selectedTags = TagSelector.SelectedTags;
         SelectedCountText.Text = $"選択中: {selectedTags.Count}/{MaxSelectableTags}個";
-
-        // 上限に達したら、まだ選んでいないタグのボタンをクリックできなくする(選択済みのボタンは
-        // 解除できるよう有効のまま)。実機で選べない組み合わせを試せてしまわないようにするため。
-        var atLimit = selectedTags.Count >= MaxSelectableTags;
-        foreach (var (_, button) in _tagButtons)
-        {
-            button.IsEnabled = button.IsChecked == true || !atLimit;
-        }
 
         var combinations = selectedTags.Count == 0
             ? Array.Empty<CombinationResult>()

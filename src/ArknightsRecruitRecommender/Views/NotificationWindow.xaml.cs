@@ -20,11 +20,10 @@ public partial class NotificationWindow : Window
     // 名前の列挙はここまでにして残りは「他N名」とまとめる。
     private const int MaxOperatorNamesShown = 6;
 
-    // ゲーム側の仕様上、募集条件のタグ枠は常に5〜6個表示される(RecruitmentMonitorService
-    // 参照)。検出数がこれ未満の場合は、OCRが1個以上見落としていることが確実なので、
-    // 気づきやすいよう警告表示にする(5個ちょうどの場合は「5個で全部」か「6個中5個」かを
-    // 区別できないため対象外)。
-    private const int MinExpectedTagCount = 5;
+    // ゲーム側の仕様上、募集条件のタグ枠は最大5個表示される(RecruitmentMonitorService.
+    // MaxTagsOnRecruitmentScreen参照)。検出数がこれ未満の場合は、OCRが1個以上見落として
+    // いることが確実なので、気づきやすいよう警告表示にする。
+    private const int MinExpectedTagCount = RecruitmentMonitorService.MaxTagsOnRecruitmentScreen;
 
     // 警告表示は、公開求人画面らしさの最低ライン(RecruitmentMonitorService参照。手動チェックは
     // 画面がどこかを問わず実行できるため、この下限を使わないと無関係な画面で偶然1〜3個

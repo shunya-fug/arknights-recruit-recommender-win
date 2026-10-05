@@ -1,0 +1,14 @@
+<UserControl x:Class="ArknightsRecruitRecommender.Views.TagSelectorPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="DarkTheme.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <!-- 分類(資質・配置・職業・特性)ごとの見出し+タグボタン群を、コードビハインドで組み立てて並べる。 -->
+    <StackPanel x:Name="GroupsPanel" />
+</UserControl>

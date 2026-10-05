@@ -24,7 +24,7 @@ public sealed class RecruitmentMonitorService : IDisposable
     private static readonly TimeSpan FirstFrameTimeout = TimeSpan.FromMilliseconds(100);
 
     // 公開求人のタグ選択画面かどうかを判定するための閾値。実機のスクリーンショットで確認した
-    // ところ、この画面では既知タグ全種類(現行データで29種類)ではなく、1枠あたり5〜6個の
+    // ところ、この画面では既知タグ全種類(現行データで29種類)ではなく、1枠あたり最大5個の
     // タグボタンがランダムに表示される仕様だった(全タグから3個まで選んで組み合わせる)。
     // 一方、それ以外の画面(敵図鑑・オペレーター詳細等)でも、タグ名と同じ単語が説明文の一部として
     // 使われているケースがあり、偶然ちょうど3個一致して誤通知を引き起こすことを実機で確認した
@@ -36,7 +36,13 @@ public sealed class RecruitmentMonitorService : IDisposable
     // ズレることを防ぐため)。
     internal const int MinMatchedTagsForRecruitmentScreen = 4;
 
-    // 公開求人画面のタグ枠は実際には5〜6個あるため(上のコメント参照)、検出数がちょうど
+    /// <summary>
+    /// 公開求人画面に同時に表示されるタグ数の上限(ユーザー確認済み: 最大5個)。タグ編集UIで、
+    /// 実機に存在しない個数まで選べてしまわないようにするために使う。
+    /// </summary>
+    public const int MaxTagsOnRecruitmentScreen = 5;
+
+    // 公開求人画面のタグ枠は最大5個あるため(MaxTagsOnRecruitmentScreen参照)、検出数がちょうど
     // MinMatchedTagsForRecruitmentScreenと同数(=ぎりぎり閾値を満たしただけ)の場合は、
     // 1個以上見落としている疑いが強い。実機検証で判明した通り、特定のタグ(例:「治療」)は
     // TagOcrService既定の正規化幅(1920px)では構造的に検出できないため(Issue #4)、
