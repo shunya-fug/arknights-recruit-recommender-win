@@ -65,6 +65,7 @@ public partial class App : Application
 
         _notificationWindow = new NotificationWindow(_settings.NotificationPosition);
         _notificationWindow.SetCompactDisplay(_settings.CompactNotificationDisplay);
+        _notificationWindow.SetRecruitTimeBand(_settings.RecruitTimeBand);
 
         // StartMonitor()はD3D11デバイス・OCRエンジンの作成を含み、実機計測で約1秒かかる。
         // OnStartup内で同期的に呼ぶと、ディスパッチャのメッセージループが動き出すまでの間
@@ -181,7 +182,7 @@ public partial class App : Application
     /// </summary>
     private void StartMonitor()
     {
-        _monitor = new RecruitmentMonitorService(_settings.Locale);
+        _monitor = new RecruitmentMonitorService(_settings.Locale, _settings.RecruitTimeBand);
         _monitor.RecommendationsUpdated += (matchedTags, results) =>
             Dispatcher.Invoke(() => _notificationWindow!.ShowResults(matchedTags, results));
         _monitor.RecruitmentScreenLost += () =>
@@ -189,6 +190,28 @@ public partial class App : Application
         // EditTagsButton_Clickの延長でUIスレッドから直接発火するため、RecommendationsUpdated等と
         // 違いDispatcher.Invokeは不要。
         _notificationWindow!.TagEditRequested += OnTagEditRequested;
+        _notificationWindow.RecruitTimeBandChanged += OnRecruitTimeBandChanged;
+        _notificationWindow.BandHintProvider = (tags, band) => _monitor!.FindRarityGainInLongerBand(tags, band);
+    }
+
+    /// <summary>
+    /// 想定する募集時間の区間が切り替えられた(Issue #34)。設定に保存し、常時監視の判定に反映する。
+    /// 自動モードでは次のポーリングで新しい区間の結果が通知される。手動モード中は監視の結果が
+    /// 表示に反映されず、手動チェックの結果も固定のため、ここで表示中のタグを新しい区間で再判定して反映する。
+    /// </summary>
+    private void OnRecruitTimeBandChanged(RecruitTimeBand band)
+    {
+        _settings = _settings with { RecruitTimeBand = band };
+        AppSettingsStore.Save(_settings);
+        _monitor!.RecruitTimeBand = band;
+
+        if (_notificationWindow!.HasStaticResults)
+        {
+            var recommended = _monitor.EvaluateManualTags(_notificationWindow.DisplayedTags)
+                .Where(c => c.IsRecommended)
+                .ToList();
+            _notificationWindow.RefreshStaticResults(recommended);
+        }
     }
 
     /// <summary>

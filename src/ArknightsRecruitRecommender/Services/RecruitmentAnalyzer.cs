@@ -14,19 +14,31 @@ namespace ArknightsRecruitRecommender.Services;
 /// (実機確認・攻略サイト複数で確認済み: https://kamigame.jp/arknights/page/344861011829888618.html)。
 /// タグの絞り込みの結果たまたま★6オペレーター1人だけに一致しても、それだけでは"確定"にならない
 /// ため、このタグを含まない組み合わせでは★6を候補から除外する。★3〜★5はこの特例が無く、
-/// 単純な絞り込みロジックのままで正しい(募集時間との兼ね合いは画面側で確認可能なため、
-/// アプリ側では扱わない)。
+/// 単純な絞り込みロジックのままで正しい。募集時間による排出レアリティの制限は、呼び出し側が
+/// 区間(<see cref="RecruitTimeBand"/>)を指定した場合のみ反映する。
 /// </summary>
 public sealed class RecruitmentAnalyzer
 {
-    public IReadOnlyList<CombinationResult> Evaluate(IReadOnlyList<string> visibleTags, IReadOnlyList<OperatorInfo> operators)
+    /// <param name="band">
+    /// 想定する募集時間の区間(Issue #34)。指定すると、その区間で排出されないレアリティの
+    /// オペレーターを候補から外して判定する(例: 7:40〜9:00なら★1・★2は出ないため、それらを
+    /// 含むために確定にならなかった組み合わせが★4以上確定になりうる)。nullなら全レアリティを
+    /// 対象にする。
+    /// </param>
+    public IReadOnlyList<CombinationResult> Evaluate(
+        IReadOnlyList<string> visibleTags,
+        IReadOnlyList<OperatorInfo> operators,
+        RecruitTimeBand? band = null)
     {
         var results = new List<CombinationResult>();
+        // ★6専用タグは、募集時間の区間で絞り込む前の全オペレーターから特定する
+        // (区間によって★6が候補から外れても、タグ自体の特定結果は変わらないため)。
         var topOperatorTag = FindTopOperatorTag(operators);
 
         foreach (var subset in GetSubsets(visibleTags, maxSize: 3))
         {
             var matches = operators
+                .Where(op => band is null || band.Value.AllowsRarity(op.Rarity))
                 .Where(op => subset.All(tag => op.Tags.Contains(tag)))
                 .ToList();
 
@@ -53,6 +65,47 @@ public sealed class RecruitmentAnalyzer
             .ThenByDescending(r => r.Tags.Count)
             .ToList();
     }
+
+    /// <summary>
+    /// 選択中の募集時間の区間より長い区間を短い順に見て、最初におすすめになる組み合わせが増える
+    /// (または確定レアリティが上がる)区間と、その区間で増える分の最高の確定レアリティを返す。
+    /// 無ければnull(Issue #34)。
+    ///
+    /// 「★１ー４」「★２ー５」などの区間では、範囲外のレアリティが候補から外れるため、その
+    /// 組み合わせが通知されない(★5が出始めるのは4:00以上、★1・★2が出なくなるのは7:40以上)。
+    /// ゲーム内では募集時間は見てから変えられるので、「通知が無い」ではなく「別の区間にすれば
+    /// 出る」ことに気づけるようにするためのヒント。最短の区間を案内するのは、実際には4:00〜7:30
+    /// でも確定になる組み合わせを、7:40以上と案内して不正確にしないため。さらに長い区間でしか
+    /// 増えない組み合わせは、案内された区間に切り替えた後の判定で次のヒントとして出る。
+    /// </summary>
+    public BandRarityGain? FindRarityGainInLongerBand(
+        IReadOnlyList<string> visibleTags,
+        IReadOnlyList<OperatorInfo> operators,
+        RecruitTimeBand band)
+    {
+        var current = Evaluate(visibleTags, operators, band)
+            .Where(r => r.IsRecommended)
+            .ToDictionary(r => CombinationKey(r), r => r.GuaranteedMinRarity ?? 0);
+
+        // 区間の並び(RecruitTimeBands.All)は短い順なので、選択中の区間より後ろが「長い区間」。
+        foreach (var longer in RecruitTimeBands.All.SkipWhile(b => b != band).Skip(1))
+        {
+            var gains = Evaluate(visibleTags, operators, longer)
+                .Where(r => r.IsRecommended)
+                .Where(r => !current.TryGetValue(CombinationKey(r), out var rarity) || (r.GuaranteedMinRarity ?? 0) > rarity)
+                .Select(r => r.GuaranteedMinRarity ?? 0)
+                .ToList();
+
+            if (gains.Count > 0)
+            {
+                return new BandRarityGain(longer, gains.Max());
+            }
+        }
+
+        return null;
+    }
+
+    private static string CombinationKey(CombinationResult r) => string.Join('\u0001', r.Tags);
 
     /// <summary>
     /// "上級エリート"相当のタグを、文字列決め打ちせずデータから動的に特定する

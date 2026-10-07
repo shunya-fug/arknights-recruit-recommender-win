@@ -24,6 +24,9 @@ public partial class PreviewWindow : Window
     private readonly IReadOnlyList<string> _knownTags;
     private readonly RecruitmentAnalyzer _analyzer = new();
     private readonly Random _random = new();
+
+    // 通知ウィンドウのタイムライン風セレクタで選んだ募集時間の区間(本番と同じ初期値)。
+    private RecruitTimeBand _recruitTimeBand = AppSettings.Default.RecruitTimeBand;
     private readonly NotificationWindow _notificationWindow = new(NotificationPosition.TopRight);
 
     public PreviewWindow()
@@ -36,6 +39,12 @@ public partial class PreviewWindow : Window
         TagSelector.MaxSelectable = MaxSelectableTags;
         TagSelector.SetTags(_knownTags);
         TagSelector.SelectionChanged += UpdateResults;
+        _notificationWindow.BandHintProvider = (tags, band) => _analyzer.FindRarityGainInLongerBand(tags, _operators, band);
+        _notificationWindow.RecruitTimeBandChanged += band =>
+        {
+            _recruitTimeBand = band;
+            UpdateResults();
+        };
         BuildPositionComboBox();
         UpdateResults();
 
@@ -91,7 +100,7 @@ public partial class PreviewWindow : Window
 
         var combinations = selectedTags.Count == 0
             ? Array.Empty<CombinationResult>()
-            : _analyzer.Evaluate(selectedTags, _operators);
+            : _analyzer.Evaluate(selectedTags, _operators, _recruitTimeBand);
 
         ResultsListBox.ItemsSource = combinations.Count == 0
             ? new[] { "(該当する組み合わせなし)" }

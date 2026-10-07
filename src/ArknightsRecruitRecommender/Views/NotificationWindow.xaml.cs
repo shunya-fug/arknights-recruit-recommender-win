@@ -1,4 +1,6 @@
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Media;
 using ArknightsRecruitRecommender.Models;
 using ArknightsRecruitRecommender.Services;
@@ -52,19 +54,121 @@ public partial class NotificationWindow : Window
     // 反映する)。手動選択と自動検出が食い違ったままだと気づきにくいため、ManualModeNoticeで
     // 常に明示する(Issue #32)。
     private bool _isManualMode;
+
+    // 手動チェックの結果を表示している間はtrue。常時監視が更新しない固定の結果なので、募集時間の
+    // 区間を切り替えた時は手動モードと同様に、表示中のタグから再判定して更新する必要がある。
+    private bool _isDebugResultShown;
     private IReadOnlyList<string> _lastAutoMatchedTags = Array.Empty<string>();
     private IReadOnlyList<CombinationResult> _lastAutoResults = Array.Empty<CombinationResult>();
 
     /// <summary>「タグを編集」が押された時に、その時点の表示タグ一覧を添えて発火する。</summary>
     public event Action<IReadOnlyList<string>>? TagEditRequested;
 
+    /// <summary>ユーザーが想定する募集時間の区間を切り替えた時に発火する(コードからの変更では発火しない)。</summary>
+    public event Action<RecruitTimeBand>? RecruitTimeBandChanged;
+
+    private readonly Dictionary<RecruitTimeBand, RadioButton> _bandButtons = new();
+    private bool _suppressBandEvent;
+    private RecruitTimeBand _selectedBand = AppSettings.Default.RecruitTimeBand;
+
+    /// <summary>
+    /// 選択中の区間より長い区間の方がおすすめが増える場合に、増える最高の確定レアリティと、それを達成できる
+    /// 最短の区間を返す(無ければnull)。未設定なら募集時間の警告は出さない(Issue #34)。
+    /// </summary>
+    public Func<IReadOnlyList<string>, RecruitTimeBand, BandRarityGain?>? BandHintProvider { get; set; }
+
+    /// <summary>
+    /// 表示中の結果が常時監視で更新されない固定のもの(手動選択のタグ、または手動チェックの結果)か。
+    /// trueの間は、募集時間の区間を切り替えた時に呼び出し側が再判定して<see cref="RefreshStaticResults"/>で反映する。
+    /// </summary>
+    public bool HasStaticResults => _isManualMode || _isDebugResultShown;
+
+    /// <summary>現在画面に表示しているタグ一覧(自動検出/手動選択いずれか)。</summary>
+    public IReadOnlyList<string> DisplayedTags => _displayedTags;
+
     public NotificationWindow(NotificationPosition position)
     {
         InitializeComponent();
 
+        BuildBandSelector();
+        SetRecruitTimeBand(AppSettings.Default.RecruitTimeBand);
         _position = position;
         SizeChanged += (_, _) => ApplyPosition();
         ApplyPosition();
+    }
+
+    /// <summary>
+    /// 想定する募集時間の3区間を、等幅のタイムライン風セレクタとして並べる(Issue #34)。
+    /// 時間の長さに比例した幅にすると、通常の運用区間(7:40〜9:00)が一番細くなってしまうため
+    /// 等幅にしている。
+    /// </summary>
+    private void BuildBandSelector()
+    {
+        var style = (Style)FindResource("BandRadioStyle");
+
+        foreach (var band in RecruitTimeBands.All)
+        {
+            var button = new RadioButton
+            {
+                Style = style,
+                GroupName = "RecruitTimeBand",
+                // 時間は枠線の上辺に重なるラベル(スタイル側がTagから表示)、レアリティ範囲は中央に表示する。
+                Tag = band.TimeLabel(),
+                Content = new TextBlock { Text = band.RarityLabel() },
+                // 区間同士は隙間なく並べ、2番目以降の区間の左辺にだけ縦の仕切り線を引く。
+                BorderThickness = band == RecruitTimeBands.All[0] ? new Thickness(0) : new Thickness(1, 0, 0, 0),
+            };
+            button.Checked += (_, _) =>
+            {
+                _selectedBand = band;
+                // 募集時間の警告と強調色は選択中の区間で変わるため、表示中のタグ一覧とあわせて更新する。
+                UpdateDetectedTagsText(_displayedTags, _isManualMode);
+
+                if (!_suppressBandEvent)
+                {
+                    RecruitTimeBandChanged?.Invoke(band);
+                }
+            };
+
+            _bandButtons[band] = button;
+            BandSelector.Children.Add(button);
+        }
+    }
+
+    /// <summary>
+    /// 選択中の区間の強調色を、見逃しの警告が出ている間(<paramref name="hasHint"/>)だけ黄色にし、
+    /// それ以外はアクセント色にする。「通常と違う区間」というだけで黄色にすると、警告が無いのに
+    /// 黄色という食い違いになるため、警告の有無と色を一致させる(Issue #34)。色はXAMLのスタイルが
+    /// 各ボタンのBackgroundから読む。
+    /// </summary>
+    private void ApplyBandAccent(bool hasHint)
+    {
+        var brush = hasHint ? BandWarningBrush : BandAccentBrush;
+        foreach (var button in _bandButtons.Values)
+        {
+            button.Background = brush;
+        }
+    }
+
+    /// <summary>セレクタの選択状態を設定する(保存済みの設定の復元用。<see cref="RecruitTimeBandChanged"/>は発火しない)。</summary>
+    public void SetRecruitTimeBand(RecruitTimeBand band)
+    {
+        _suppressBandEvent = true;
+        _bandButtons[band].IsChecked = true;
+        _suppressBandEvent = false;
+    }
+
+    /// <summary>
+    /// 固定の結果(手動選択のタグ・手動チェックの結果)を表示中に、想定する募集時間の区間が変わった
+    /// 場合の再判定結果を反映する(Issue #32/#34)。自動検出の結果は常時監視が次のポーリングで新しい
+    /// 区間の結果を通知するため、何もしない。
+    /// </summary>
+    public void RefreshStaticResults(IReadOnlyList<CombinationResult> results)
+    {
+        if (HasStaticResults)
+        {
+            RenderResults(results);
+        }
     }
 
     /// <summary>
@@ -122,6 +226,7 @@ public partial class NotificationWindow : Window
             return;
         }
 
+        _isDebugResultShown = false;
         TitleText.Text = "おすすめタグ一覧";
         _displayedTags = matchedTags;
         UpdateDetectedTagsText(matchedTags, isManual: false);
@@ -138,6 +243,7 @@ public partial class NotificationWindow : Window
     public void ShowDebugResult(RecruitmentCheckResult result)
     {
         ExitManualMode();
+        _isDebugResultShown = true;
         TitleText.Text = "手動チェック結果";
         var recommended = result.Combinations.Where(r => r.IsRecommended).ToList();
 
@@ -166,6 +272,7 @@ public partial class NotificationWindow : Window
         }
 
         _isManualMode = true;
+        _isDebugResultShown = false;
         _displayedTags = selectedTags;
         TitleText.Text = "おすすめタグ一覧";
         UpdateDetectedTagsText(selectedTags, isManual: true);
@@ -192,32 +299,65 @@ public partial class NotificationWindow : Window
     private void ExitManualMode()
     {
         _isManualMode = false;
+        _isDebugResultShown = false;
         ManualModeNotice.Visibility = Visibility.Collapsed;
     }
 
     private void UpdateDetectedTagsText(IReadOnlyList<string> tags, bool isManual)
     {
+        // 行ごとに色を変えるため、1つのTextにせずRunを並べる(未検出タグの警告は赤、募集時間の
+        // 警告は黄色)。
+        var lines = new List<(string Text, Brush Brush)>();
+
         if (isManual)
         {
             // 手動で選んだタグなので、OCRの検出漏れを示す警告は意味を持たないため出さない。
-            DetectedTagsText.Text = tags.Count == 0 ? "選択タグ: (なし)" : $"選択タグ: {string.Join(" / ", tags)}";
-            DetectedTagsText.Foreground = DetectedTagsNormalBrush;
-            return;
+            lines.Add((tags.Count == 0 ? "選択タグ: (なし)" : $"選択タグ: {string.Join(" / ", tags)}", DetectedTagsNormalBrush));
         }
-
-        if (tags.Count == 0)
+        else if (tags.Count == 0)
         {
-            DetectedTagsText.Text = "検出タグ: (一致なし)";
-            DetectedTagsText.Foreground = DetectedTagsNormalBrush;
-            return;
+            lines.Add(("検出タグ: (一致なし)", DetectedTagsNormalBrush));
+        }
+        else
+        {
+            var isIncomplete = tags.Count is >= RecruitmentMonitorService.MinMatchedTagsForRecruitmentScreen and < MinExpectedTagCount;
+            var brush = isIncomplete ? DetectedTagsWarningBrush : DetectedTagsNormalBrush;
+            lines.Add(($"検出タグ: {string.Join(" / ", tags)}", brush));
+            if (isIncomplete)
+            {
+                lines.Add(("⚠検出できていないタグがあります", brush));
+            }
         }
 
-        var isIncomplete = tags.Count is >= RecruitmentMonitorService.MinMatchedTagsForRecruitmentScreen and < MinExpectedTagCount;
-        DetectedTagsText.Text = isIncomplete
-            ? $"検出タグ: {string.Join(" / ", tags)}\n⚠検出できていないタグがあります"
-            : $"検出タグ: {string.Join(" / ", tags)}";
-        DetectedTagsText.Foreground = isIncomplete ? DetectedTagsWarningBrush : DetectedTagsNormalBrush;
+        DetectedTagsText.Inlines.Clear();
+        for (var i = 0; i < lines.Count; i++)
+        {
+            if (i > 0)
+            {
+                DetectedTagsText.Inlines.Add(new LineBreak());
+            }
+
+            DetectedTagsText.Inlines.Add(new Run(lines[i].Text) { Foreground = lines[i].Brush });
+        }
+
+        // 選択中の募集時間の区間では通知されない高レアの組み合わせが、通常の区間(7:40〜9:00)なら
+        // 出る場合に知らせる(Issue #34)。手動選択の注記より下の専用の行に表示する。
+        var hint = tags.Count > 0 ? BandHintProvider?.Invoke(tags, _selectedBand) : null;
+        ApplyBandAccent(hint is not null);
+        if (hint is { } gain)
+        {
+            BandHintText.Text = $"⚠{gain.Band.StartLabel()}以上にすると★{ToFullWidthDigits(gain.Rarity)}以上確定の組み合わせがあります";
+            BandHintText.Foreground = BandWarningBrush;
+            BandHintText.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            BandHintText.Visibility = Visibility.Collapsed;
+        }
     }
+
+    private static string ToFullWidthDigits(int value) =>
+        new(value.ToString().Select(c => (char)('０' + (c - '0'))).ToArray());
 
     /// <summary>
     /// 通知の中身(RootBorder)を表示する。
@@ -316,6 +456,11 @@ public partial class NotificationWindow : Window
     // 赤系を使う。
     private static readonly SolidColorBrush DetectedTagsNormalBrush = Freeze(0xFF, 0xB0, 0xBE, 0xC5);
     private static readonly SolidColorBrush DetectedTagsWarningBrush = Freeze(0xFF, 0xFF, 0x52, 0x52);
+
+    // 想定する募集時間の区間セレクタの強調色(通常の区間=アクセント色、それ以外=黄色)と、
+    // 募集時間に関する警告の文字色(黄色)。
+    private static readonly SolidColorBrush BandAccentBrush = Freeze(0xFF, 0x4F, 0xC3, 0xF7);
+    private static readonly SolidColorBrush BandWarningBrush = Freeze(0xFF, 0xFF, 0xC1, 0x07);
 
     // オペレーターチップ用の低不透明度版。枠線だとカード全体の枠線と同じ見た目で紛らわしい
     // (ユーザー指摘)ため、チップ側はごく薄い塗りつぶしにして視覚的な階層を分けている。

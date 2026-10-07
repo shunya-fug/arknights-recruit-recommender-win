@@ -116,4 +116,82 @@ public class RecruitmentAnalyzerTests
         var single = Assert.Single(results);
         Assert.Equal(6, single.GuaranteedMinRarity);
     }
+
+    [Fact]
+    public void Band740_ExcludesLowRarityOperators_MakingTheComboRecommended()
+    {
+        // 爆発力(★1のTHRM-EXと★4以上が混在)を模したケース。区間指定なしでは★1が含まれるため
+        // 確定にならないが、7:40〜9:00では★1が出ないため候補から外れ、★4以上確定になる。
+        var operators = new List<OperatorInfo>
+        {
+            new() { Name = "Robo", Rarity = 1, Tags = new[] { "Burst" } },
+            new() { Name = "Cutter", Rarity = 4, Tags = new[] { "Burst" } },
+            new() { Name = "Fire", Rarity = 5, Tags = new[] { "Burst" } },
+        };
+        var analyzer = new RecruitmentAnalyzer();
+
+        var withoutBand = analyzer.Evaluate(new[] { "Burst" }, operators).Single();
+        var withBand = analyzer.Evaluate(new[] { "Burst" }, operators, RecruitTimeBand.From740).Single();
+
+        Assert.False(withoutBand.IsRecommended);
+        Assert.Equal(4, withBand.GuaranteedMinRarity);
+        Assert.True(withBand.IsRecommended);
+        Assert.DoesNotContain(withBand.MatchingOperators, o => o.Name == "Robo");
+    }
+
+    [Fact]
+    public void ShortBand_ExcludesFiveStarAndAbove_AndLongBandKeepsSixStarOnlyWithTopTag()
+    {
+        var analyzer = new RecruitmentAnalyzer();
+
+        // ★1〜4の区間では★5(FiveStarCaster)・★6が候補外なので、"Senior Operator"は結果が空。
+        var shortBand = analyzer.Evaluate(new[] { "Senior Operator" }, Operators, RecruitTimeBand.UpTo350);
+        Assert.Empty(shortBand);
+
+        // ★6は7:40〜9:00のときだけ候補になり、さらに上級エリートタグが必要(従来仕様)。
+        var midBand = analyzer.Evaluate(new[] { "Top Operator" }, Operators, RecruitTimeBand.From400To730);
+        Assert.Empty(midBand);
+        var longBand = analyzer.Evaluate(new[] { "Top Operator" }, Operators, RecruitTimeBand.From740);
+        Assert.Equal(6, Assert.Single(longBand).GuaranteedMinRarity);
+    }
+
+    [Fact]
+    public void RarityGainInLongerBand_ReportsHigherRarityComboHiddenByShortBand()
+    {
+        var analyzer = new RecruitmentAnalyzer();
+
+        // ★1〜4の区間では★5(FiveStarCaster)が出ないため"Senior Operator"のおすすめが消える。
+        // ★5が出始める4:00〜7:30の区間にすれば★5確定になるので、7:40以上ではなくその区間を案内する。
+        var hint = analyzer.FindRarityGainInLongerBand(new[] { "Senior Operator" }, Operators, RecruitTimeBand.UpTo350);
+
+        Assert.Equal(new BandRarityGain(RecruitTimeBand.From400To730, 5), hint);
+    }
+
+    [Fact]
+    public void RarityGainInLongerBand_PointsToTheShortestBandWhereTheComboBecomesRecommended()
+    {
+        // 爆発力(★1のTHRM-EXと★4以上が混在)を模したケース。★1が出なくなるのは4:00以上なので、
+        // ★1〜4では出ない★4以上確定が、4:00〜7:30で出る(7:40以上と案内しない)。
+        var operators = new List<OperatorInfo>
+        {
+            new() { Name = "Robo", Rarity = 1, Tags = new[] { "Burst" } },
+            new() { Name = "Cutter", Rarity = 4, Tags = new[] { "Burst" } },
+            new() { Name = "Fire", Rarity = 5, Tags = new[] { "Burst" } },
+        };
+        var analyzer = new RecruitmentAnalyzer();
+
+        var hint = analyzer.FindRarityGainInLongerBand(new[] { "Burst" }, operators, RecruitTimeBand.UpTo350);
+
+        Assert.Equal(new BandRarityGain(RecruitTimeBand.From400To730, 4), hint);
+    }
+
+    [Fact]
+    public void RarityGainInLongerBand_IsNullInTheLongestBandOrWhenNothingGained()
+    {
+        var analyzer = new RecruitmentAnalyzer();
+
+        Assert.Null(analyzer.FindRarityGainInLongerBand(new[] { "Senior Operator" }, Operators, RecruitTimeBand.From740));
+        // "Guard"系は区間を変えてもおすすめの有無・確定レアリティが変わらない。
+        Assert.Null(analyzer.FindRarityGainInLongerBand(new[] { "Guard" }, Operators, RecruitTimeBand.From400To730));
+    }
 }
