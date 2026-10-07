@@ -80,6 +80,10 @@ public sealed class RecruitmentMonitorService : IDisposable
 
     private readonly System.Threading.Timer _timer;
     private IReadOnlyList<string>? _lastVisibleTags;
+    private RecruitTimeBand _lastVisibleBand;
+
+    // 想定する募集時間の区間(Issue #34)。UIスレッドから変更され、ポーリングのスレッドから読まれる。
+    private volatile RecruitTimeBand _recruitTimeBand;
     private bool _isOnRecruitmentScreen;
 
     // OCRは1ティック目だけタグを1個見落とし、次のティックで揃うことがある(実績あり)。
@@ -109,8 +113,9 @@ public sealed class RecruitmentMonitorService : IDisposable
     /// ゲームの表示言語とOSの言語設定は必ずしも一致しないため、OSのプロファイル言語からの
     /// 自動選択には頼らず、常にこの値を明示的にOCRエンジンへ渡す。
     /// </param>
-    public RecruitmentMonitorService(string locale)
+    public RecruitmentMonitorService(string locale, RecruitTimeBand recruitTimeBand = RecruitTimeBand.From740)
     {
+        _recruitTimeBand = recruitTimeBand;
         _operators = new OperatorDataProvider(locale: locale).Load();
         _knownTags = OperatorDataProvider.GetAllKnownTags(_operators);
         _ocrService = new TagOcrService(new Language(locale));
@@ -127,6 +132,24 @@ public sealed class RecruitmentMonitorService : IDisposable
     /// </summary>
     /// <returns>ゲームウィンドウが見つからない、またはフレームを取得できなかった場合はnull。</returns>
     /// <summary>
+    /// 想定する募集時間の区間(Issue #34)。変更後は、次のポーリング(最大<see cref="PollInterval"/>後)
+    /// で、同じタグの検出結果であっても新しい区間で再判定した結果が通知される。
+    /// </summary>
+    public RecruitTimeBand RecruitTimeBand
+    {
+        get => _recruitTimeBand;
+        set => _recruitTimeBand = value;
+    }
+
+    /// <summary>
+    /// 選択中の区間より長い区間で判定した方がおすすめが増える場合の、最高の確定レアリティと
+    /// それを達成できる最短の区間(無ければnull)。通知で「別の区間にすれば出る」ことを
+    /// 知らせるために使う(Issue #34)。
+    /// </summary>
+    public BandRarityGain? FindRarityGainInLongerBand(IReadOnlyList<string> tags, RecruitTimeBand band) =>
+        _analyzer.FindRarityGainInLongerBand(tags, _operators, band);
+
+    /// <summary>
     /// 既知タグの全件一覧(タグの手動編集UIで選択肢として使う、Issue #32)。
     /// </summary>
     public IReadOnlyList<string> KnownTags => _knownTags;
@@ -136,14 +159,14 @@ public sealed class RecruitmentMonitorService : IDisposable
     /// ロジック自体は常時監視・手動チェックと同じ<see cref="RecruitmentAnalyzer"/>を再利用する。
     /// </summary>
     public IReadOnlyList<CombinationResult> EvaluateManualTags(IReadOnlyList<string> tags) =>
-        _analyzer.Evaluate(tags, _operators);
+        _analyzer.Evaluate(tags, _operators, _recruitTimeBand);
 
     public async Task<RecruitmentCheckResult?> CheckOnceAsync()
     {
         await _checkGate.WaitAsync();
         try
         {
-            return await CheckOnceCoreAsync();
+            return await CheckOnceCoreAsync(_recruitTimeBand);
         }
         finally
         {
@@ -159,7 +182,7 @@ public sealed class RecruitmentMonitorService : IDisposable
     /// （同じウィンドウで起動済みならそのまま使い回す。これが高頻度ポーリングを安く保つ理由）、
     /// 見つからなければセッションを破棄し、ゲーム終了直後にGPUリソースを解放する。
     /// </summary>
-    private async Task<RecruitmentCheckResult?> CheckOnceCoreAsync()
+    private async Task<RecruitmentCheckResult?> CheckOnceCoreAsync(RecruitTimeBand band)
     {
         var hwnd = WindowCaptureService.FindWindowByProcessName(GameProcessName);
         if (hwnd is null)
@@ -205,7 +228,7 @@ public sealed class RecruitmentMonitorService : IDisposable
             }
         }
 
-        var combinations = _analyzer.Evaluate(visibleTags, _operators);
+        var combinations = _analyzer.Evaluate(visibleTags, _operators, band);
 
         return new RecruitmentCheckResult(frame, detected, visibleTags, combinations);
     }
@@ -243,7 +266,10 @@ public sealed class RecruitmentMonitorService : IDisposable
 
         try
         {
-            var result = await CheckOnceCoreAsync();
+            // 判定中に区間が変更されても、この1ティック内では同じ区間で一貫して判定する(下の
+            // 重複通知の抑止にもこの値を使う)。
+            var band = _recruitTimeBand;
+            var result = await CheckOnceCoreAsync(band);
             var isOnRecruitmentScreen = result is not null
                 && result.MatchedTags.Count >= MinMatchedTagsForRecruitmentScreen
                 && HasRecruitmentScreenAnchor(result.RawOcrWords);
@@ -266,7 +292,7 @@ public sealed class RecruitmentMonitorService : IDisposable
             _isOnRecruitmentScreen = true;
 
             // Avoid re-notifying for the same tag set every poll cycle.
-            if (_lastVisibleTags is not null && _lastVisibleTags.SequenceEqual(result!.MatchedTags))
+            if (_lastVisibleTags is not null && _lastVisibleBand == band && _lastVisibleTags.SequenceEqual(result!.MatchedTags))
             {
                 return;
             }
@@ -280,6 +306,7 @@ public sealed class RecruitmentMonitorService : IDisposable
             if (goodCombinations.Count > 0)
             {
                 _lastVisibleTags = result.MatchedTags;
+                _lastVisibleBand = band;
                 _pendingNoRecommendationTags = null;
                 RecommendationsUpdated?.Invoke(result.MatchedTags, goodCombinations);
                 return;
@@ -290,6 +317,7 @@ public sealed class RecruitmentMonitorService : IDisposable
             if (_pendingNoRecommendationTags is not null && _pendingNoRecommendationTags.SequenceEqual(result.MatchedTags))
             {
                 _lastVisibleTags = result.MatchedTags;
+                _lastVisibleBand = band;
                 _pendingNoRecommendationTags = null;
                 RecommendationsUpdated?.Invoke(result.MatchedTags, goodCombinations);
             }

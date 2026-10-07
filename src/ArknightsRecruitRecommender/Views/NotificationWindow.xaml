@@ -10,6 +10,61 @@
         Background="Transparent"
         SizeToContent="WidthAndHeight">
     <Window.Resources>
+        <!-- 想定する募集時間の区間を選ぶタイムライン風セレクタの各区間(Issue #34)。区間同士は
+             隙間なく並べ、各区間の下辺に引いた線が並んで1本のタイムラインになる。上段に時間の
+             ラベル、その下に中央の値(レアリティ範囲)を表示する。区間の境目の縦の仕切り線は
+             レアリティ範囲の高さだけの短い線(BorderThickness)。選択中の区間は、線・ラベル・範囲が
+             強調色になり、線が太くなる。強調色はこのボタンのBackgroundに設定された色を使う(見逃しの警告が
+             出ている間は黄色にして、警告と色を一致させるため。
+             Background自体は他の描画には使っていない)。RadioButtonなので排他選択になる。 -->
+        <Style x:Key="BandRadioStyle" TargetType="RadioButton">
+            <!-- 中央のレア度表示は、時間ラベルより目立ちすぎないよう小さめ・通常の太さにし、
+                 選択中の区間だけ少し太くする(Contentのテキストはこの値を継承する)。 -->
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="#FFB0BEC5" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="BorderBrush" Value="#FF3A4153" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Grid Height="36" Background="Transparent">
+                            <StackPanel VerticalAlignment="Top" Margin="0,2,0,0">
+                                <TextBlock x:Name="Caption"
+                                           Text="{TemplateBinding Tag}"
+                                           FontSize="10"
+                                           Foreground="#FF78909C"
+                                           HorizontalAlignment="Center" />
+                                <ContentPresenter HorizontalAlignment="Center" />
+                            </StackPanel>
+                            <Border Height="15"
+                                    Margin="0,0,0,2"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Center"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}" />
+                            <Border x:Name="Line"
+                                    Height="1"
+                                    VerticalAlignment="Bottom"
+                                    Background="#FF3A4153" />
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Caption" Property="Foreground" Value="#FFB0BEC5" />
+                                <Setter TargetName="Line" Property="Background" Value="#FF78909C" />
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Caption" Property="Foreground" Value="{Binding Background, RelativeSource={RelativeSource TemplatedParent}}" />
+                                <Setter TargetName="Line" Property="Background" Value="{Binding Background, RelativeSource={RelativeSource TemplatedParent}}" />
+                                <Setter TargetName="Line" Property="Height" Value="2" />
+                                <Setter Property="Foreground" Value="{Binding Background, RelativeSource={RelativeSource Self}}" />
+                                <Setter Property="FontWeight" Value="SemiBold" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- 既定のToolTipは白背景の素っ気ない見た目でダークテーマと衝突するため、カードと
              揃えたスタイルに差し替える。 -->
         <Style TargetType="ToolTip">
@@ -48,7 +103,6 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <TextBlock x:Name="TitleText"
                            Grid.Column="0"
@@ -57,9 +111,42 @@
                            FontWeight="Bold"
                            FontSize="13"
                            VerticalAlignment="Center" />
-                <!-- OCRの誤検出・検出漏れをユーザー自身が補正するための入口(Issue #32)。
-                     Segoe MDL2 Assets(Win10/11標準)の鉛筆グリフ(E70F)。アイコンだけだと用途が
-                     分かりにくいためツールチップで補う。 -->
+                <Button x:Name="CloseButton"
+                        Grid.Column="1"
+                        Content="×"
+                        Width="20"
+                        Height="20"
+                        Padding="0"
+                        Margin="6,0,0,0"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Foreground="White"
+                        FontSize="14"
+                        Cursor="Hand"
+                        Click="CloseButton_Click" />
+            </Grid>
+
+            <!-- 想定する募集時間の区間(3区間を等幅で並べる)。各区間はNotificationWindow.xaml.cs
+                 (BuildBandSelector)で組み立てる。 -->
+            <UniformGrid x:Name="BandSelector" Rows="1" Margin="0,0,0,8" />
+
+            <!-- OCRで検出されたタグの一覧(自動検出・手動チェックいずれでも常に表示、Issue #26
+                 Stage 1)。Foregroundはコードビハインド(UpdateDetectedTagsText)で毎回設定する
+                 ためここでは指定しない(通常色/警告色どちらになるかは検出タグ数に応じて
+                 実行時に決まる)。 -->
+            <Grid Margin="0,0,0,6">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="DetectedTagsText"
+                           Grid.Column="0"
+                           FontSize="12"
+                           TextWrapping="Wrap" />
+                <!-- OCRの誤検出・検出漏れをユーザー自身が補正するための入口(Issue #32)。検出タグの
+                     すぐ右に置き、補正の対象(検出タグ)との関係が分かるようにする。Segoe MDL2
+                     Assets(Win10/11標準)の鉛筆グリフ(E70F)。アイコンだけだと用途が分かりにくい
+                     ためツールチップで補う。 -->
                 <Button x:Name="EditTagsButton"
                         Grid.Column="1"
                         Content="&#xE70F;"
@@ -74,30 +161,9 @@
                         Foreground="White"
                         FontSize="12"
                         Cursor="Hand"
+                        VerticalAlignment="Top"
                         Click="EditTagsButton_Click" />
-                <Button x:Name="CloseButton"
-                        Grid.Column="2"
-                        Content="×"
-                        Width="20"
-                        Height="20"
-                        Padding="0"
-                        Margin="6,0,0,0"
-                        Background="Transparent"
-                        BorderThickness="0"
-                        Foreground="White"
-                        FontSize="14"
-                        Cursor="Hand"
-                        Click="CloseButton_Click" />
             </Grid>
-
-            <!-- OCRで検出されたタグの一覧(自動検出・手動チェックいずれでも常に表示、Issue #26
-                 Stage 1)。Foregroundはコードビハインド(UpdateDetectedTagsText)で毎回設定する
-                 ためここでは指定しない(通常色/警告色どちらになるかは検出タグ数に応じて
-                 実行時に決まる)。 -->
-            <TextBlock x:Name="DetectedTagsText"
-                       FontSize="12"
-                       TextWrapping="Wrap"
-                       Margin="0,0,0,6" />
 
             <!-- 手動でタグを補正した間、自動検出との食い違いに気づけるようにする注記(Issue #32)。
                  手動モード中のみVisibleにする(コードビハインドで切り替え)。 -->
@@ -129,6 +195,15 @@
                         Cursor="Hand"
                         Click="RefreshButton_Click" />
             </Grid>
+
+            <!-- 選択中の募集時間の区間では通知されない高レアの組み合わせが、通常の区間(7:40〜9:00)なら
+                 出る場合の警告(Issue #34)。手動選択の注記の下に置く。表示は
+                 NotificationWindow.xaml.cs(UpdateDetectedTagsText)で切り替える。 -->
+            <TextBlock x:Name="BandHintText"
+                       Visibility="Collapsed"
+                       FontSize="12"
+                       TextWrapping="Wrap"
+                       Margin="0,0,0,6" />
 
             <TextBlock x:Name="NoResultsText"
                        Text="おすすめの組み合わせはありません"
