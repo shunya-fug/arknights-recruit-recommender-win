@@ -17,6 +17,9 @@ public partial class App : Application
     // 再確認する。GitHub APIの無認証レート制限(60回/時)に対して十分小さい頻度。
     private static readonly TimeSpan UpdateCheckInterval = TimeSpan.FromHours(24);
 
+    // 自己アップデート(約75MBのダウンロードと置き換え)全体のタイムアウト。
+    private static readonly TimeSpan SelfUpdateTimeout = TimeSpan.FromMinutes(10);
+
     private TaskbarIcon? _trayIcon;
     private RecruitmentMonitorService? _monitor;
     private NotificationWindow? _notificationWindow;
@@ -30,7 +33,8 @@ public partial class App : Application
     private System.Windows.Controls.TextBlock? _versionText;
     private System.Windows.Documents.Run? _versionRun;
     private System.Windows.Documents.Run? _updateBadgeRun;
-    private string? _updateReleaseUrl;
+    private UpdateCheckService.UpdateInfo? _availableUpdate;
+    private bool _isUpdating;
 
     // Windowsの標準アクセントカラー。更新可能であることを、警告色(赤)ほど強くなく、
     // かといって無効化されたように見えるグレーでもない色で示すため。
@@ -78,6 +82,9 @@ public partial class App : Application
         Dispatcher.BeginInvoke(new Action(() =>
         {
             RefreshStartupRegistrationPathIfNeeded();
+            // 前回の自己アップデートで残った置き換え前のexe(.old)を片付ける。古いプロセスの終了待ちで
+            // 数秒かかることがあるため、完了を待たずバックグラウンドで行う(失敗しても動作に影響しない)。
+            _ = SelfUpdateService.CleanupLeftoversAsync(Environment.ProcessPath);
             StartMonitor();
             DiagnosticLog.Write("[起動] 監視サービス初期化完了(D3D11デバイス・OCRエンジン作成を含む)");
         }), DispatcherPriority.Background);
@@ -142,31 +149,102 @@ public partial class App : Application
         {
             _updateBadgeRun.Text = "";
             _versionMenuItem.IsEnabled = false;
-            _updateReleaseUrl = null;
+            _availableUpdate = null;
         }
         else
         {
             _updateBadgeRun.Text = "（更新可能）";
             _versionMenuItem.IsEnabled = true;
-            _updateReleaseUrl = update.HtmlUrl;
+            _availableUpdate = update;
         }
     }
 
     /// <summary>
     /// バージョン表示メニュー項目のクリック処理。更新が無い間はIsEnabled=falseにしてあるため、
     /// ホバー時のハイライトやクリック自体が発生しない(項目が存在を主張しすぎないようにするため)。
-    /// 既定のブラウザでリリースページを開く。
+    /// 更新用zipの情報が揃い、exeのフォルダに書き込める場合は、確認ダイアログのうえで自己アップデート
+    /// して再起動する(<see cref="SelfUpdateService"/>)。
+    /// それ以外(開発実行・書き込み不可・zip情報なし)や、自己アップデートに失敗した場合は、
+    /// 従来どおりリリースページを開く。
     /// </summary>
-    private void OnVersionMenuItemClick(object sender, RoutedEventArgs e)
+    private async void OnVersionMenuItemClick(object sender, RoutedEventArgs e)
     {
-        if (_updateReleaseUrl is null)
+        var update = _availableUpdate;
+        if (update is null || _isUpdating)
         {
             return;
         }
 
         try
         {
-            Process.Start(new ProcessStartInfo(_updateReleaseUrl) { UseShellExecute = true });
+            // 置き換え後は実行中のプロセスのモジュールのパスが.oldへ変わるため、置き換え前に取得する。
+            var exePath = Environment.ProcessPath;
+            if (!SelfUpdateService.CanSelfUpdate(update, exePath))
+            {
+                OpenReleasePage(update.HtmlUrl);
+                return;
+            }
+
+            // 確認ダイアログの表示中にメニューから再度クリックされてダイアログが二重に出ないよう、
+            // ダイアログを出す前から更新中として扱う(「いいえ」の場合は戻す)。
+            _isUpdating = true;
+
+            var sizeText = update.AssetSizeBytes is { } bytes ? $"約{bytes / 1024 / 1024}MB" : "ダウンロード";
+            var confirm = await ShowMessageBoxAsync(
+                $"{FormatVersion(update.LatestVersion)}に更新します。{sizeText}をダウンロードして、自動的に再起動します。\n\nよろしいですか？",
+                "更新",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+            if (confirm != MessageBoxResult.Yes)
+            {
+                _isUpdating = false;
+                return;
+            }
+
+            _versionMenuItem!.IsEnabled = false;
+            _updateBadgeRun!.Text = "（更新中…）";
+            DiagnosticLog.Write($"[自己更新] {FormatVersion(update.LatestVersion)}への更新を開始: {exePath}");
+
+            try
+            {
+                // 通信が止まって「更新中…」のまま戻らなくならないよう、全体にタイムアウトをかける。
+                using var timeout = new CancellationTokenSource(SelfUpdateTimeout);
+                await SelfUpdateService.ApplyUpdateAsync(update, exePath!, timeout.Token);
+            }
+            catch (Exception ex)
+            {
+                DiagnosticLog.Write($"[自己更新] 失敗: {ex}");
+                var openPage = await ShowMessageBoxAsync(
+                    $"自動更新に失敗しました。リリースページを開きますか？\n\n{ex.Message}",
+                    "更新",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning);
+                if (openPage == MessageBoxResult.Yes)
+                {
+                    OpenReleasePage(update.HtmlUrl);
+                }
+
+                _isUpdating = false;
+                ApplyVersionMenuState(GetCurrentVersion(), update);
+                return;
+            }
+
+            DiagnosticLog.Write("[自己更新] 置き換え完了、再起動します");
+            await RestartApplicationAsync(exePath, "更新");
+        }
+        catch (Exception ex)
+        {
+            // async voidのため、ここで握りつぶさないとアプリ全体がクラッシュする。
+            DiagnosticLog.Write($"[自己更新] 想定外のエラー: {ex}");
+            _isUpdating = false;
+        }
+    }
+
+    private static void OpenReleasePage(string url)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
         }
         catch (Exception ex)
         {
@@ -555,11 +633,16 @@ public partial class App : Application
         }
     }
 
-    private async Task RestartApplicationAsync()
+    /// <param name="exePath">
+    /// 再起動するexeのパス。省略時は実行中のexe。自己アップデート後は、プロセスのモジュールのパスが
+    /// 置き換え前のexe(.old)を指すため、置き換え前に取得した値を渡す。
+    /// </param>
+    /// <param name="caption">失敗時のダイアログのタイトル。</param>
+    private async Task RestartApplicationAsync(string? exePath = null, string caption = "言語設定")
     {
         try
         {
-            var exePath = Process.GetCurrentProcess().MainModule?.FileName;
+            exePath ??= Process.GetCurrentProcess().MainModule?.FileName;
             if (exePath is not null)
             {
                 Process.Start(exePath);
@@ -571,7 +654,7 @@ public partial class App : Application
             // 再起動をお願いするだけにとどめ、原因不明のクラッシュとして落とさない。
             await ShowMessageBoxAsync(
                 $"アプリの自動再起動に失敗しました。手動で起動し直してください。\n\n{ex.Message}",
-                "言語設定",
+                caption,
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
         }
