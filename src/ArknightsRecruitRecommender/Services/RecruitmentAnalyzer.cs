@@ -67,8 +67,8 @@ public sealed class RecruitmentAnalyzer
     }
 
     /// <summary>
-    /// 選択中の募集時間の区間より長い区間を短い順に見て、最初におすすめになる組み合わせが増える
-    /// (または確定レアリティが上がる)区間と、その区間で増える分の最高の確定レアリティを返す。
+    /// 選択中の募集時間の区間では表示されていない組み合わせが、より長い区間なら★4以上確定になる
+    /// 場合に、最初にそうなる(最短の)区間と、その区間で増える分の最高の確定レアリティを返す。
     /// 無ければnull(Issue #34)。
     ///
     /// 「★１ー４」「★２ー５」などの区間では、範囲外のレアリティが候補から外れるため、その
@@ -77,22 +77,27 @@ public sealed class RecruitmentAnalyzer
     /// 出る」ことに気づけるようにするためのヒント。最短の区間を案内するのは、実際には4:00〜7:30
     /// でも確定になる組み合わせを、7:40以上と案内して不正確にしないため。さらに長い区間でしか
     /// 増えない組み合わせは、案内された区間に切り替えた後の判定で次のヒントとして出る。
+    ///
+    /// 既にカードとして表示されている組み合わせは、見逃しではないため対象にしない。特に、短い区間で
+    /// 狙うレアリティ(★1・★2)が出る組み合わせは、そのレアリティを狙ってその区間を選んでいるのに、
+    /// 長い区間ならその分が外れて確定になるのが通常で、毎回案内すると不要な警告になる。
     /// </summary>
     public BandRarityGain? FindRarityGainInLongerBand(
         IReadOnlyList<string> visibleTags,
         IReadOnlyList<OperatorInfo> operators,
         RecruitTimeBand band)
     {
-        var current = Evaluate(visibleTags, operators, band)
-            .Where(r => r.IsRecommended)
-            .ToDictionary(r => CombinationKey(r), r => r.GuaranteedMinRarity ?? 0);
+        // 選択中の区間で表示される組み合わせ。確定のものは確定レアリティ、狙うレアリティの
+        // 組み合わせ(確定ではないが表示されている)は、どの長い区間でも「増えた」とみなさないよう最大値にする。
+        var displayed = SelectForDisplay(Evaluate(visibleTags, operators, band), band)
+            .ToDictionary(r => CombinationKey(r), r => r.IsRecommended ? r.GuaranteedMinRarity ?? 0 : int.MaxValue);
 
         // 区間の並び(RecruitTimeBands.All)は短い順なので、選択中の区間より後ろが「長い区間」。
         foreach (var longer in RecruitTimeBands.All.SkipWhile(b => b != band).Skip(1))
         {
             var gains = Evaluate(visibleTags, operators, longer)
                 .Where(r => r.IsRecommended)
-                .Where(r => !current.TryGetValue(CombinationKey(r), out var rarity) || (r.GuaranteedMinRarity ?? 0) > rarity)
+                .Where(r => !displayed.TryGetValue(CombinationKey(r), out var rarity) || (r.GuaranteedMinRarity ?? 0) > rarity)
                 .Select(r => r.GuaranteedMinRarity ?? 0)
                 .ToList();
 
@@ -103,6 +108,54 @@ public sealed class RecruitmentAnalyzer
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// これ以上の確定レアリティ(エリート=★5、上級エリート=★6)を当てにするには、募集時間を9:00に
+    /// する必要がある。9:00未満だと選んだタグが外れる(タグ消し)ことがあり、9:00なら外れない
+    /// (攻略サイト・Terra Wikiで確認)。★4確定は件数が多く、毎回出ると目障りなので対象にしない。
+    /// </summary>
+    public const int MinRarityRequiringFullTime = 5;
+
+    /// <summary>
+    /// 表示中の組み合わせに、募集時間を9:00にしないとタグが外れることがある確定
+    /// (<see cref="MinRarityRequiringFullTime"/>以上)が含まれるか。通知の「9:00推奨」警告を出す条件。
+    /// </summary>
+    public static bool RequiresFullTimeRecruitment(IReadOnlyList<CombinationResult> displayed) =>
+        displayed.Any(c => c.IsRecommended && c.GuaranteedMinRarity >= MinRarityRequiringFullTime);
+
+    /// <summary>
+    /// 通知に表示する組み合わせを、想定する募集時間の区間に応じて選ぶ(Issue #34)。
+    ///
+    /// どの区間でも、★4以上が確定する組み合わせ(<see cref="CombinationResult.IsRecommended"/>)を
+    /// 先頭に表示する(価値が高く件数も少ないため。短い区間でこれを隠すと、7:40〜9:00と結果が
+    /// 同じで警告も出ないため、見落としに気づけない)。
+    /// 短い区間(〜3:50・4:00〜7:30)は、これに続けて、その区間で狙うレアリティ
+    /// (<see cref="RecruitTimeBands.TargetRarity"/>、★1・★2)のオペレーターが1人でも出うる組み合わせを、
+    /// そのレアリティの割合が高い(当たりやすい)順に返す。ロボットなど通常の運用では出ない低レアを
+    /// 狙うときに、この区間を選ぶため。
+    ///
+    /// <paramref name="combinations"/>は、同じ区間で<see cref="Evaluate"/>した結果であること
+    /// (区間で出ないレアリティは、既に候補から外れている前提)。
+    /// </summary>
+    public static IReadOnlyList<CombinationResult> SelectForDisplay(
+        IReadOnlyList<CombinationResult> combinations,
+        RecruitTimeBand band)
+    {
+        var recommended = combinations.Where(c => c.IsRecommended).ToList();
+        if (band.TargetRarity() is not { } target)
+        {
+            return recommended;
+        }
+
+        // ★4以上確定の組み合わせは最低★4なので、狙うレアリティ(★1・★2)を含むことは無く、
+        // 上のrecommendedと重複しない。
+        var targeted = combinations
+            .Where(c => c.MatchingOperators.Any(o => o.Rarity == target))
+            .OrderByDescending(c => (double)c.MatchingOperators.Count(o => o.Rarity == target) / c.MatchingOperators.Count)
+            .ThenByDescending(c => c.Tags.Count);
+
+        return recommended.Concat(targeted).ToList();
     }
 
     private static string CombinationKey(CombinationResult r) => string.Join('\u0001', r.Tags);

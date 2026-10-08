@@ -49,6 +49,19 @@ public static class RecruitTimeBands
     };
 
     /// <summary>
+    /// その区間で「狙う」レアリティ。短い区間(〜3:50は★1、4:00〜7:30は★2)は、通常の運用(7:40〜9:00)
+    /// では出ない低レアのオペレーター(ロボット等)を狙うときにしか選ばないため、★4以上の確定ではなく、
+    /// そのレアリティが出うる組み合わせを表示する。通常の運用区間は★4以上の確定を表示するのでnull。
+    /// </summary>
+    public static int? TargetRarity(this RecruitTimeBand band) => band switch
+    {
+        RecruitTimeBand.UpTo350 => 1,
+        RecruitTimeBand.From400To730 => 2,
+        RecruitTimeBand.From740 => null,
+        _ => throw new ArgumentOutOfRangeException(nameof(band)),
+    };
+
+    /// <summary>
     /// この区間でそのレアリティのオペレーターが排出されうるか。★6は、募集可能範囲(★3〜5)の
     /// 上限を超えて「上級エリート」タグ限定で出るため、通常の運用区間(7:40〜9:00)でのみ
     /// 候補にし、タグが必要かどうかの判定は呼び出し側(RecruitmentAnalyzer)に任せる。

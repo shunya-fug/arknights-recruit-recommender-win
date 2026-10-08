@@ -109,7 +109,7 @@ public partial class PreviewWindow : Window
         // 通知ウィンドウには本番と同じく「おすすめ」だけを表示する。全組み合わせの内訳は
         // 上のResultsListBox側(このプレビュー専用)で確認する。選択中のタグをそのまま
         // 検出タグとして渡し、Issue #26 Stage 1の表示もこのツールでプレビューできるようにする。
-        _notificationWindow.ShowResults(selectedTags, combinations.Where(c => c.IsRecommended).ToList());
+        _notificationWindow.ShowResults(selectedTags, RecruitmentAnalyzer.SelectForDisplay(combinations, _recruitTimeBand));
     }
 
     private static string FormatCombination(CombinationResult c) =>

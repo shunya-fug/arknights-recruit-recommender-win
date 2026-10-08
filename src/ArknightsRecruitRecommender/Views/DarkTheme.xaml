@@ -34,6 +34,85 @@
         </Setter>
     </Style>
 
+    <!-- スクロールバーのつまみ。トラック(溝)は透明で、細い丸みのある暗色のつまみだけを表示する。
+         ホバー・ドラッグ中だけ少し明るくする。 -->
+    <Style x:Key="ScrollThumbStyle" TargetType="Thumb">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Thumb">
+                    <Border x:Name="Bar" Background="#FF3A4153" CornerRadius="3" />
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bar" Property="Background" Value="#FF566178" />
+                        </Trigger>
+                        <Trigger Property="IsDragging" Value="True">
+                            <Setter TargetName="Bar" Property="Background" Value="#FF4FC3F7" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- 矢印ボタンは持たず、
+         溝の空き部分のクリックでページ送りだけできるようにする。キーを付けない暗黙のスタイルなので、
+         このディクショナリを読み込んだウィンドウ内のScrollViewerに自動で適用される。 -->
+    <Style TargetType="ScrollBar">
+        <!-- 標準のテーマ側のMinWidth(システムのスクロールバー幅)が残るため、明示的に0にして細くする。 -->
+        <Setter Property="MinWidth" Value="0" />
+        <Setter Property="Width" Value="8" />
+        <!-- カードとの間に余白を空ける(スクロールバーが出ている間だけ、カード側の幅がその分狭くなる)。 -->
+        <Setter Property="Margin" Value="6,0,0,0" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ScrollBar">
+                    <Grid Background="Transparent">
+                        <Track x:Name="PART_Track" IsDirectionReversed="True">
+                            <Track.DecreaseRepeatButton>
+                                <RepeatButton Command="ScrollBar.PageUpCommand" Opacity="0" Focusable="False" />
+                            </Track.DecreaseRepeatButton>
+                            <Track.Thumb>
+                                <Thumb Style="{StaticResource ScrollThumbStyle}" />
+                            </Track.Thumb>
+                            <Track.IncreaseRepeatButton>
+                                <RepeatButton Command="ScrollBar.PageDownCommand" Opacity="0" Focusable="False" />
+                            </Track.IncreaseRepeatButton>
+                        </Track>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <!-- 横スクロールバー(開発補助ツールの結果一覧など)は、縦と同じ見た目で向きだけ入れ替える。 -->
+        <Style.Triggers>
+            <Trigger Property="Orientation" Value="Horizontal">
+                <Setter Property="MinHeight" Value="0" />
+                <Setter Property="Width" Value="Auto" />
+                <Setter Property="Height" Value="8" />
+                <Setter Property="Margin" Value="0,6,0,0" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ScrollBar">
+                            <Grid Background="Transparent">
+                                <Track x:Name="PART_Track">
+                                    <Track.DecreaseRepeatButton>
+                                        <RepeatButton Command="ScrollBar.PageLeftCommand" Opacity="0" Focusable="False" />
+                                    </Track.DecreaseRepeatButton>
+                                    <Track.Thumb>
+                                        <Thumb Style="{StaticResource ScrollThumbStyle}" />
+                                    </Track.Thumb>
+                                    <Track.IncreaseRepeatButton>
+                                        <RepeatButton Command="ScrollBar.PageRightCommand" Opacity="0" Focusable="False" />
+                                    </Track.IncreaseRepeatButton>
+                                </Track>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
     <Style x:Key="AccentButtonStyle" TargetType="Button" BasedOn="{StaticResource DarkButtonStyle}">
         <Setter Property="Background" Value="#FF4FC3F7" />
         <Setter Property="Foreground" Value="Black" />

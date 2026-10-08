@@ -285,10 +285,7 @@ public partial class App : Application
 
         if (_notificationWindow!.HasStaticResults)
         {
-            var recommended = _monitor.EvaluateManualTags(_notificationWindow.DisplayedTags)
-                .Where(c => c.IsRecommended)
-                .ToList();
-            _notificationWindow.RefreshStaticResults(recommended);
+            _notificationWindow.RefreshStaticResults(_monitor.EvaluateTagsForDisplay(_notificationWindow.DisplayedTags));
         }
     }
 
@@ -308,8 +305,7 @@ public partial class App : Application
         _tagEditWindow = new TagEditWindow(_monitor!.KnownTags, tagsAtOpen);
         _tagEditWindow.Confirmed += selectedTags =>
         {
-            var recommended = _monitor!.EvaluateManualTags(selectedTags).Where(c => c.IsRecommended).ToList();
-            _notificationWindow!.ApplyTagEditResult(tagsAtOpen, selectedTags, recommended);
+            _notificationWindow!.ApplyTagEditResult(tagsAtOpen, selectedTags, _monitor!.EvaluateTagsForDisplay(selectedTags));
         };
         _tagEditWindow.Closed += (_, _) => _tagEditWindow = null;
         _tagEditWindow.Show();

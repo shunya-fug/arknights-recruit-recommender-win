@@ -168,10 +168,11 @@ public class RecruitmentAnalyzerTests
     }
 
     [Fact]
-    public void RarityGainInLongerBand_PointsToTheShortestBandWhereTheComboBecomesRecommended()
+    public void RarityGainInLongerBand_DoesNotWarnForCombosAlreadyShownAsTheTargetRarity()
     {
-        // 爆発力(★1のTHRM-EXと★4以上が混在)を模したケース。★1が出なくなるのは4:00以上なので、
-        // ★1〜4では出ない★4以上確定が、4:00〜7:30で出る(7:40以上と案内しない)。
+        // 爆発力(★1のTHRM-EXと★4以上が混在)を模したケース。★１ー４では「★1募集可能」のカードとして
+        // 既に表示されている(★1を狙ってこの区間を選んでいる)ので、長い区間なら確定になることを
+        // 毎回警告すると不要な警告になる。
         var operators = new List<OperatorInfo>
         {
             new() { Name = "Robo", Rarity = 1, Tags = new[] { "Burst" } },
@@ -180,9 +181,24 @@ public class RecruitmentAnalyzerTests
         };
         var analyzer = new RecruitmentAnalyzer();
 
-        var hint = analyzer.FindRarityGainInLongerBand(new[] { "Burst" }, operators, RecruitTimeBand.UpTo350);
+        Assert.Null(analyzer.FindRarityGainInLongerBand(new[] { "Burst" }, operators, RecruitTimeBand.UpTo350));
+    }
 
-        Assert.Equal(new BandRarityGain(RecruitTimeBand.From400To730, 4), hint);
+    [Fact]
+    public void RarityGainInLongerBand_PointsToTheShortestBandWhereAnUndisplayedComboBecomesRecommended()
+    {
+        // ★2と★4が混在する組み合わせ。★１ー４(狙うのは★1)では、★1を含まず確定でもないので表示されない。
+        // ★2が出なくなる7:40以降で★4確定になるので、4:00〜7:30(★2が残る)ではなく7:40以上を案内する。
+        var operators = new List<OperatorInfo>
+        {
+            new() { Name = "Two", Rarity = 2, Tags = new[] { "Mix" } },
+            new() { Name = "Four", Rarity = 4, Tags = new[] { "Mix" } },
+        };
+        var analyzer = new RecruitmentAnalyzer();
+
+        Assert.Equal(
+            new BandRarityGain(RecruitTimeBand.From740, 4),
+            analyzer.FindRarityGainInLongerBand(new[] { "Mix" }, operators, RecruitTimeBand.UpTo350));
     }
 
     [Fact]
@@ -193,5 +209,88 @@ public class RecruitmentAnalyzerTests
         Assert.Null(analyzer.FindRarityGainInLongerBand(new[] { "Senior Operator" }, Operators, RecruitTimeBand.From740));
         // "Guard"系は区間を変えてもおすすめの有無・確定レアリティが変わらない。
         Assert.Null(analyzer.FindRarityGainInLongerBand(new[] { "Guard" }, Operators, RecruitTimeBand.From400To730));
+    }
+
+    private static readonly IReadOnlyList<OperatorInfo> LowRarityOperators = new List<OperatorInfo>
+    {
+        new() { Name = "Robo1", Rarity = 1, Tags = new[] { "X" } },
+        new() { Name = "Two", Rarity = 2, Tags = new[] { "X", "Z" } },
+        new() { Name = "Four1", Rarity = 4, Tags = new[] { "X", "Y" } },
+        new() { Name = "Robo2", Rarity = 1, Tags = new[] { "Y" } },
+        new() { Name = "Four2", Rarity = 4, Tags = new[] { "Y" } },
+        new() { Name = "Four3", Rarity = 4, Tags = new[] { "Y", "W" } },
+    };
+
+    [Fact]
+    public void SelectForDisplay_InTheNormalBand_ReturnsOnlyRecommendedCombos()
+    {
+        var analyzer = new RecruitmentAnalyzer();
+        var all = analyzer.Evaluate(new[] { "Senior Operator", "Guard" }, Operators, RecruitTimeBand.From740);
+
+        var displayed = RecruitmentAnalyzer.SelectForDisplay(all, RecruitTimeBand.From740);
+
+        Assert.Equal(all.Where(c => c.IsRecommended), displayed);
+    }
+
+    [Fact]
+    public void SelectForDisplay_InTheShortestBand_ListsConfirmedCombosFirst_ThenOneStarCombosByShare()
+    {
+        var analyzer = new RecruitmentAnalyzer();
+        var all = analyzer.Evaluate(new[] { "X", "Y", "W" }, LowRarityOperators, RecruitTimeBand.UpTo350);
+
+        var displayed = RecruitmentAnalyzer.SelectForDisplay(all, RecruitTimeBand.UpTo350);
+
+        // ★4以上確定([W]・[X,Y]など、★1を含まず全員★4のプール)が先頭。続けて、★1を含む組み合わせ。
+        var confirmedCount = all.Count(c => c.IsRecommended);
+        Assert.True(confirmedCount > 0);
+        Assert.All(displayed.Take(confirmedCount), c => Assert.True(c.IsRecommended));
+
+        var targeted = displayed.Skip(confirmedCount).ToList();
+        Assert.All(targeted, c => Assert.Contains(c.MatchingOperators, o => o.Rarity == 1));
+        // 通知の表示は、狙うレアリティを下限(GuaranteedMinRarity)から求めるので、一致していること。
+        Assert.All(targeted, c => Assert.Equal(1, c.GuaranteedMinRarity));
+        // [X]: Robo1/Two/Four1 → ★1は1/3。[Y]: Robo2/Four1/Four2/Four3 → 1/4。当たりやすい順。
+        Assert.Equal(
+            new[] { "X", "Y" },
+            targeted.Where(c => c.Tags.Count == 1).Select(c => string.Join(",", c.Tags)));
+
+        var shares = targeted.Select(c => (double)c.MatchingOperators.Count(o => o.Rarity == 1) / c.MatchingOperators.Count).ToList();
+        Assert.Equal(shares.OrderByDescending(s => s), shares);
+    }
+
+    [Fact]
+    public void SelectForDisplay_InTheMidBand_TargetsTwoStarsAndIgnoresOneStars()
+    {
+        var analyzer = new RecruitmentAnalyzer();
+        var all = analyzer.Evaluate(new[] { "X", "Z" }, LowRarityOperators, RecruitTimeBand.From400To730);
+
+        var displayed = RecruitmentAnalyzer.SelectForDisplay(all, RecruitTimeBand.From400To730);
+
+        // ★1(Robo1)は4:00以降は出ないので候補外。★2(Two)を含む[X]・[Z]・[X,Z]が出る。
+        Assert.NotEmpty(displayed);
+        Assert.All(displayed, c => Assert.DoesNotContain(c.MatchingOperators, o => o.Rarity == 1));
+        Assert.All(displayed.Where(c => !c.IsRecommended), c => Assert.Contains(c.MatchingOperators, o => o.Rarity == 2));
+        Assert.All(displayed.Where(c => !c.IsRecommended), c => Assert.Equal(2, c.GuaranteedMinRarity));
+    }
+
+    [Fact]
+    public void FullTimeWarning_AppliesOnlyToFiveStarAndAboveConfirmedCombos()
+    {
+        var analyzer = new RecruitmentAnalyzer();
+
+        List<CombinationResult> Displayed(params string[] tags) =>
+            RecruitmentAnalyzer.SelectForDisplay(
+                analyzer.Evaluate(tags, Operators, RecruitTimeBand.From740), RecruitTimeBand.From740).ToList();
+
+        // ★4確定(FourStarDps)は対象外。
+        Assert.False(RecruitmentAnalyzer.RequiresFullTimeRecruitment(Displayed("DPS")));
+        // ★5確定(エリート相当)。
+        Assert.True(RecruitmentAnalyzer.RequiresFullTimeRecruitment(Displayed("Senior Operator")));
+        // ★6確定のみ(上級エリート相当)。
+        Assert.True(RecruitmentAnalyzer.RequiresFullTimeRecruitment(Displayed("Top Operator")));
+        // ★5と★6が両方ある場合も対象。
+        Assert.True(RecruitmentAnalyzer.RequiresFullTimeRecruitment(Displayed("Senior Operator", "Top Operator")));
+        // 何も表示されていないときは警告なし。
+        Assert.False(RecruitmentAnalyzer.RequiresFullTimeRecruitment(new List<CombinationResult>()));
     }
 }
