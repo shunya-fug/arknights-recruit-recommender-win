@@ -25,4 +25,13 @@ public class RecruitTimeBandTests
     {
         Assert.Equal(RecruitTimeBand.From740, AppSettings.Default.RecruitTimeBand);
     }
+
+    [Theory]
+    [InlineData(RecruitTimeBand.UpTo350, 1)]
+    [InlineData(RecruitTimeBand.From400To730, 2)]
+    [InlineData(RecruitTimeBand.From740, null)]
+    public void TargetRarity_IsTheLowestRarityThatOnlyAppearsInShortBands(RecruitTimeBand band, int? expected)
+    {
+        Assert.Equal(expected, band.TargetRarity());
+    }
 }

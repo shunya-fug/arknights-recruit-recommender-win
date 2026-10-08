@@ -35,7 +35,7 @@ public partial class NotificationWindow : Window
 
     private NotificationPosition _position;
 
-    // 「N★以上確定」ラベルを出すか(通常表示)、枠線の色と件数だけにするか(コンパクト表示)。
+    // 「★N以上確定」ラベルを出すか(通常表示)、枠線の色と件数だけにするか(コンパクト表示)。
     // トレイメニューから切り替え可能(SetCompactDisplay参照)。
     private bool _compactDisplay;
 
@@ -197,6 +197,11 @@ public partial class NotificationWindow : Window
     private void ApplyPosition()
     {
         var workArea = SystemParameters.WorkArea;
+
+        // 組み合わせが多いと通知が画面の高さを超え、上部(タイトル・閉じるボタン)が見えなくなるため、
+        // ウィンドウの高さを作業領域に収める。超えた分は、結果の一覧のScrollViewerがスクロールで吸収する。
+        MaxHeight = Math.Max(0, workArea.Height - ScreenMargin * 2);
+
         var width = ActualWidth > 0 ? ActualWidth : InitialWidthEstimate;
         var height = ActualHeight > 0 ? ActualHeight : InitialHeightEstimate;
 
@@ -245,7 +250,7 @@ public partial class NotificationWindow : Window
         ExitManualMode();
         _isDebugResultShown = true;
         TitleText.Text = "手動チェック結果";
-        var recommended = result.Combinations.Where(r => r.IsRecommended).ToList();
+        var recommended = RecruitmentAnalyzer.SelectForDisplay(result.Combinations, _selectedBand);
 
         // 手動チェックの結果も「直近の実際の検出結果」なので、自動検出のキャッシュとして保持する。
         // これを更新しないと、手動チェック結果を表示中に「タグを編集」→「更新」を押した際、
@@ -325,7 +330,7 @@ public partial class NotificationWindow : Window
             lines.Add(($"検出タグ: {string.Join(" / ", tags)}", brush));
             if (isIncomplete)
             {
-                lines.Add(("⚠検出できていないタグがあります", brush));
+                lines.Add(("検出できていないタグがあります", brush));
             }
         }
 
@@ -346,7 +351,7 @@ public partial class NotificationWindow : Window
         ApplyBandAccent(hint is not null);
         if (hint is { } gain)
         {
-            BandHintText.Text = $"⚠{gain.Band.StartLabel()}以上にすると★{ToFullWidthDigits(gain.Rarity)}以上確定の組み合わせがあります";
+            BandHintText.Text = $"募集時間を{gain.Band.StartLabel()}以上にすると{GuaranteeText(gain.Rarity)}の組み合わせが増えます";
             BandHintText.Foreground = BandWarningBrush;
             BandHintText.Visibility = Visibility.Visible;
         }
@@ -355,6 +360,10 @@ public partial class NotificationWindow : Window
             BandHintText.Visibility = Visibility.Collapsed;
         }
     }
+
+    /// <summary>「★４以上確定」の表記。★６は上限なので「以上」を付けず「★６確定」とする。</summary>
+    private static string GuaranteeText(int rarity) =>
+        rarity >= 6 ? $"★{ToFullWidthDigits(rarity)}確定" : $"★{ToFullWidthDigits(rarity)}以上確定";
 
     private static string ToFullWidthDigits(int value) =>
         new(value.ToString().Select(c => (char)('０' + (c - '0'))).ToArray());
@@ -396,6 +405,18 @@ public partial class NotificationWindow : Window
     {
         _lastResults = results;
 
+        // ★5以上確定(エリート・上級エリート)のカードがある間は、募集時間を9:00にするよう警告する。
+        if (RecruitmentAnalyzer.RequiresFullTimeRecruitment(results))
+        {
+            NineHourHintText.Text = "高レアを募集する場合は募集時間を9:00に設定することを推奨します";
+            NineHourHintText.Foreground = BandWarningBrush;
+            NineHourHintText.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            NineHourHintText.Visibility = Visibility.Collapsed;
+        }
+
         if (results.Count == 0)
         {
             NoResultsText.Visibility = Visibility.Visible;
@@ -411,7 +432,7 @@ public partial class NotificationWindow : Window
 
     private static CombinationDisplayItem ToDisplayItem(CombinationResult r, bool compact)
     {
-        // 「4★以上確定」のような組み合わせでも、実際には5★・6★のオペレーターが混ざって
+        // 「★４以上確定」のような組み合わせでも、実際には★５・★６のオペレーターが混ざって
         // 対象になることがある(GuaranteedMinRarityはあくまで下限)。基本はバッジ表示の
         // レアリティが出る、という読み方に合わせてレアリティ昇順で並べる(ユーザー確認済み)。
         var sortedOperators = r.MatchingOperators.OrderBy(o => o.Rarity).ThenBy(o => o.Name).ToList();
@@ -430,26 +451,50 @@ public partial class NotificationWindow : Window
         // チップが省略されている場合に限らず、常に全対象者をホバーで確認できるようにする
         // (名前+レアリティを列形式で見せるため、単純な文字列ではなく行データとして保持する)。
         var tooltipRows = sortedOperators
-            .Select(o => new OperatorTooltipRow(o.Name, $"{o.Rarity}★", RarityBrush(o.Rarity)))
+            .Select(o => new OperatorTooltipRow(o.Name, $"★{ToFullWidthDigits(o.Rarity)}", RarityBrush(o.Rarity)))
             .ToList();
+
+        // ★4以上確定の組み合わせは「★N以上確定」。短い区間で、狙うレアリティが出うる組み合わせ(確定ではない)は
+        // 「★N募集可能」とし、件数もそのレアリティの人数/プール全体の人数で、当たりやすさが分かるようにする。
+        // 狙うレアリティは、結果を計算した区間では下限(GuaranteedMinRarity)と一致する(その区間では
+        // それより低いレアリティは候補から外れているため)。選択中の区間を別に参照すると、区間を
+        // 切り替えた直後に古い結果と食い違うので、結果自身から求める。
+        string rarityText;
+        string countText;
+        SolidColorBrush rarityBrush;
+        if (!r.IsRecommended && r.GuaranteedMinRarity is { } target)
+        {
+            var targetCount = r.MatchingOperators.Count(o => o.Rarity == target);
+            rarityText = $"★{ToFullWidthDigits(target)}募集可能";
+            countText = $"{targetCount}/{r.MatchingOperators.Count}件";
+            rarityBrush = RarityBrush(target);
+        }
+        else
+        {
+            rarityText = GuaranteeText(r.GuaranteedMinRarity ?? 0);
+            countText = $"{r.MatchingOperators.Count}件";
+            rarityBrush = RarityBrush(r.GuaranteedMinRarity);
+        }
 
         return new CombinationDisplayItem(
             TagsText: $"タグ: {string.Join(" / ", r.Tags)}",
-            RarityText: $"{r.GuaranteedMinRarity}★以上確定",
-            CountText: $"{r.MatchingOperators.Count}件",
-            RarityBrush: RarityBrush(r.GuaranteedMinRarity),
+            RarityText: rarityText,
+            CountText: countText,
+            RarityBrush: rarityBrush,
             NormalHeaderVisibility: compact ? Visibility.Collapsed : Visibility.Visible,
             CompactHeaderVisibility: compact ? Visibility.Visible : Visibility.Collapsed,
             OperatorChips: chips,
             AllOperators: tooltipRows);
     }
 
-    // アークナイツ本編のレアリティ配色に合わせた色。GuaranteedMinRarityは「この組み合わせで
-    // 保証される最低レアリティ」であり、通知対象(IsRecommended)は常に4以上なので3以下は
-    // 実際には出現しないが、念のためフォールバックを用意している。
+    // アークナイツ本編のレアリティ配色に合わせた色(★1は白〜灰、★2は黄緑、★3は青、★4は紫、★5は黄、★6はオレンジ)。
+    // 通常の運用(7:40〜9:00)では★4以上しか表示しないが、短い区間では★1〜★3も表示するため、
+    // ★1(灰色)はフォールバックと同じ色にしている。
     private static readonly SolidColorBrush Rarity6Brush = Freeze(0xFF, 0xFF, 0x9A, 0x2E);
     private static readonly SolidColorBrush Rarity5Brush = Freeze(0xFF, 0xFF, 0xD5, 0x4F);
     private static readonly SolidColorBrush Rarity4Brush = Freeze(0xFF, 0xC0, 0x92, 0xFF);
+    private static readonly SolidColorBrush Rarity3Brush = Freeze(0xFF, 0x4D, 0xA6, 0xFF);
+    private static readonly SolidColorBrush Rarity2Brush = Freeze(0xFF, 0x9C, 0xD6, 0x4A);
     private static readonly SolidColorBrush FallbackRarityBrush = Freeze(0xFF, 0x9E, 0x9E, 0x9E);
 
     // 検出タグ一覧の文字色。既存のレアリティ配色(オレンジ/黄/紫)と紛れないよう、警告色には
@@ -468,6 +513,8 @@ public partial class NotificationWindow : Window
     private static readonly SolidColorBrush Rarity6TintBrush = Freeze(TintAlpha, 0xFF, 0x9A, 0x2E);
     private static readonly SolidColorBrush Rarity5TintBrush = Freeze(TintAlpha, 0xFF, 0xD5, 0x4F);
     private static readonly SolidColorBrush Rarity4TintBrush = Freeze(TintAlpha, 0xC0, 0x92, 0xFF);
+    private static readonly SolidColorBrush Rarity3TintBrush = Freeze(TintAlpha, 0x4D, 0xA6, 0xFF);
+    private static readonly SolidColorBrush Rarity2TintBrush = Freeze(TintAlpha, 0x9C, 0xD6, 0x4A);
     private static readonly SolidColorBrush FallbackTintBrush = Freeze(TintAlpha, 0x9E, 0x9E, 0x9E);
 
     private static SolidColorBrush Freeze(byte a, byte r, byte g, byte b)
@@ -482,6 +529,8 @@ public partial class NotificationWindow : Window
         6 => Rarity6Brush,
         5 => Rarity5Brush,
         4 => Rarity4Brush,
+        3 => Rarity3Brush,
+        2 => Rarity2Brush,
         _ => FallbackRarityBrush,
     };
 
@@ -490,6 +539,8 @@ public partial class NotificationWindow : Window
         6 => Rarity6TintBrush,
         5 => Rarity5TintBrush,
         4 => Rarity4TintBrush,
+        3 => Rarity3TintBrush,
+        2 => Rarity2TintBrush,
         _ => FallbackTintBrush,
     };
 

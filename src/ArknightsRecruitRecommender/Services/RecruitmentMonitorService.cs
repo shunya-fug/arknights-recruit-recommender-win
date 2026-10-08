@@ -155,11 +155,15 @@ public sealed class RecruitmentMonitorService : IDisposable
     public IReadOnlyList<string> KnownTags => _knownTags;
 
     /// <summary>
-    /// ユーザーが手動で選んだタグの組み合わせを、OCR結果を介さず直接判定する(Issue #32)。
-    /// ロジック自体は常時監視・手動チェックと同じ<see cref="RecruitmentAnalyzer"/>を再利用する。
+    /// ユーザーが手動で選んだタグの組み合わせを、OCR結果を介さず直接判定し、現在の区間で通知に
+    /// 表示する組み合わせを返す(Issue #32/#34)。ロジック自体は常時監視・手動チェックと同じ
+    /// <see cref="RecruitmentAnalyzer"/>(判定と表示の選別)を再利用する。
     /// </summary>
-    public IReadOnlyList<CombinationResult> EvaluateManualTags(IReadOnlyList<string> tags) =>
-        _analyzer.Evaluate(tags, _operators, _recruitTimeBand);
+    public IReadOnlyList<CombinationResult> EvaluateTagsForDisplay(IReadOnlyList<string> tags)
+    {
+        var band = _recruitTimeBand;
+        return RecruitmentAnalyzer.SelectForDisplay(_analyzer.Evaluate(tags, _operators, band), band);
+    }
 
     public async Task<RecruitmentCheckResult?> CheckOnceAsync()
     {
@@ -301,7 +305,7 @@ public sealed class RecruitmentMonitorService : IDisposable
             // 何も表示されていない」のか「判定済みでおすすめが無い」のかを画面から区別できず、
             // また直前に別のタグの組み合わせでおすすめが表示されていた場合、タグが変わって
             // おすすめが無くなった後もその古い通知が消えずに残ってしまう(実際に発生していた不具合)。
-            var goodCombinations = result!.Combinations.Where(r => r.IsRecommended).ToList();
+            var goodCombinations = RecruitmentAnalyzer.SelectForDisplay(result!.Combinations, band);
 
             if (goodCombinations.Count > 0)
             {

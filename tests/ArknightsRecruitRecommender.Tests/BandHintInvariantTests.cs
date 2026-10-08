@@ -31,7 +31,7 @@ public class BandHintInvariantTests
             {
                 var hint = analyzer.FindRarityGainInLongerBand(tags, operators, band);
                 var longerBands = RecruitTimeBands.All.SkipWhile(b => b != band).Skip(1).ToList();
-                var current = Recommended(analyzer, tags, operators, band);
+                var current = Displayed(analyzer, tags, operators, band);
                 var context = $"band={band}, tags={string.Join("/", tags)}";
 
                 if (hint is null)
@@ -77,6 +77,15 @@ public class BandHintInvariantTests
             Assert.Null(analyzer.FindRarityGainInLongerBand(new[] { tag }, operators, RecruitTimeBand.From740));
         }
     }
+
+    /// <summary>
+    /// 選択中の区間で表示される組み合わせ。確定のものは確定レアリティ、狙うレアリティが出る組み合わせ
+    /// (確定ではないが表示されている)は、警告の対象にならないようint.MaxValueにする。
+    /// </summary>
+    private static Dictionary<string, int> Displayed(
+        RecruitmentAnalyzer analyzer, IReadOnlyList<string> tags, IReadOnlyList<OperatorInfo> operators, RecruitTimeBand band) =>
+        RecruitmentAnalyzer.SelectForDisplay(analyzer.Evaluate(tags, operators, band), band)
+            .ToDictionary(r => string.Join("|", r.Tags), r => r.IsRecommended ? r.GuaranteedMinRarity ?? 0 : int.MaxValue);
 
     private static Dictionary<string, int> Recommended(
         RecruitmentAnalyzer analyzer, IReadOnlyList<string> tags, IReadOnlyList<OperatorInfo> operators, RecruitTimeBand band) =>
