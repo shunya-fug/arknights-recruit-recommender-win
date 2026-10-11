@@ -40,6 +40,16 @@ public partial class PreviewWindow : Window
         TagSelector.SetTags(_knownTags);
         TagSelector.SelectionChanged += UpdateResults;
         _notificationWindow.BandHintProvider = (tags, band) => _analyzer.FindRarityGainInLongerBand(tags, _operators, band);
+
+        // 「--follow <プロセス名>」を付けて起動すると、そのプロセスのウィンドウがあるモニタ・仮想デスクトップへ
+        // 通知を出す(本番のゲーム追従動作を、ゲーム無しで確認するため)。
+        var args = Environment.GetCommandLineArgs();
+        var followIndex = Array.IndexOf(args, "--follow");
+        if (followIndex >= 0 && followIndex + 1 < args.Length)
+        {
+            var processName = args[followIndex + 1];
+            _notificationWindow.GameWindowProvider = () => WindowCaptureService.FindWindowByProcessName(processName);
+        }
         _notificationWindow.RecruitTimeBandChanged += band =>
         {
             _recruitTimeBand = band;

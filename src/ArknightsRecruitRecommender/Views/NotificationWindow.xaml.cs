@@ -1,7 +1,9 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
+using System.Windows.Interop;
 using System.Windows.Media;
+using ArknightsRecruitRecommender.Interop;
 using ArknightsRecruitRecommender.Models;
 using ArknightsRecruitRecommender.Services;
 
@@ -85,6 +87,16 @@ public partial class NotificationWindow : Window
 
     /// <summary>現在画面に表示しているタグ一覧(自動検出/手動選択いずれか)。</summary>
     public IReadOnlyList<string> DisplayedTags => _displayedTags;
+
+    /// <summary>
+    /// ゲームのウィンドウを返す(見つからなければnull)。通知を出す時に、そのウィンドウがあるモニタと
+    /// 仮想デスクトップへ寄せるために使う。未設定、または見つからない場合は、プライマリモニタの
+    /// 現在のデスクトップに出す(従来どおり)。
+    /// </summary>
+    public Func<IntPtr?>? GameWindowProvider { get; set; }
+
+    // ゲームのウィンドウがあるモニタの作業領域(WPFの論理単位)。nullならプライマリモニタ(SystemParameters.WorkArea)。
+    private Rect? _targetWorkArea;
 
     public NotificationWindow(NotificationPosition position)
     {
@@ -196,22 +208,17 @@ public partial class NotificationWindow : Window
 
     private void ApplyPosition()
     {
-        var workArea = SystemParameters.WorkArea;
+        var workArea = _targetWorkArea ?? SystemParameters.WorkArea;
 
         // 組み合わせが多いと通知が画面の高さを超え、上部(タイトル・閉じるボタン)が見えなくなるため、
         // ウィンドウの高さを作業領域に収める。超えた分は、結果の一覧のScrollViewerがスクロールで吸収する。
-        MaxHeight = Math.Max(0, workArea.Height - ScreenMargin * 2);
+        MaxHeight = NotificationPlacement.MaxHeight(workArea.Top, workArea.Bottom, ScreenMargin);
 
         var width = ActualWidth > 0 ? ActualWidth : InitialWidthEstimate;
         var height = ActualHeight > 0 ? ActualHeight : InitialHeightEstimate;
 
-        Left = _position is NotificationPosition.TopLeft or NotificationPosition.BottomLeft
-            ? workArea.Left + ScreenMargin
-            : workArea.Right - width - ScreenMargin;
-
-        Top = _position is NotificationPosition.TopLeft or NotificationPosition.TopRight
-            ? workArea.Top + ScreenMargin
-            : workArea.Bottom - height - ScreenMargin;
+        (Left, Top) = NotificationPlacement.Calculate(
+            _position, workArea.Left, workArea.Top, workArea.Right, workArea.Bottom, width, height, ScreenMargin);
     }
 
     /// <summary>
@@ -386,6 +393,46 @@ public partial class NotificationWindow : Window
         {
             _windowShown = true;
             Show();
+        }
+
+        FollowGameWindow();
+    }
+
+    /// <summary>
+    /// 通知を、ゲームのウィンドウがあるモニタの隅・仮想デスクトップへ寄せる。通知を出すたびに呼ぶので、
+    /// ゲームを別のモニタ・デスクトップへ動かしても次の通知から追従する。ゲームのウィンドウが
+    /// 見つからない、または取得に失敗した場合は、プライマリモニタに出す(デスクトップは動かさない)。
+    /// </summary>
+    private void FollowGameWindow()
+    {
+        var ownHwnd = new WindowInteropHelper(this).Handle;
+        var gameHwnd = GameWindowProvider?.Invoke();
+        var source = PresentationSource.FromVisual(this);
+
+        Rect? workArea = null;
+        if (gameHwnd is { } game && ownHwnd != IntPtr.Zero && source?.CompositionTarget is { } target &&
+            WindowPlacementInterop.TryGetMonitorWorkArea(game) is { } workAreaPx)
+        {
+            // 取得できるのはデバイスピクセルなので、WPFの論理単位(Left/Top/MaxHeightの単位)へ変換する。
+            var toLogical = target.TransformFromDevice;
+            workArea = new Rect(
+                toLogical.Transform(workAreaPx.TopLeft),
+                toLogical.Transform(workAreaPx.BottomRight));
+
+            WindowPlacementInterop.MoveToSameDesktop(ownHwnd, game);
+        }
+
+        // ゲームのウィンドウが見つからない時は、以前ゲームを追って移ったデスクトップに取り残されて
+        // 見えなくならないよう、いま操作中のデスクトップへ戻す。
+        if (workArea is null && ownHwnd != IntPtr.Zero)
+        {
+            WindowPlacementInterop.MoveToCurrentDesktop(ownHwnd);
+        }
+
+        if (_targetWorkArea != workArea)
+        {
+            _targetWorkArea = workArea;
+            ApplyPosition();
         }
     }
 
