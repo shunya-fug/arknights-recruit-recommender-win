@@ -68,6 +68,7 @@ public partial class App : Application
         DiagnosticLog.Write("[起動] トレイアイコン作成完了");
 
         _notificationWindow = new NotificationWindow(_settings.NotificationPosition);
+        _notificationWindow.GameWindowProvider = () => _monitor?.GameWindow;
         _notificationWindow.SetCompactDisplay(_settings.CompactNotificationDisplay);
         _notificationWindow.SetRecruitTimeBand(_settings.RecruitTimeBand);
 

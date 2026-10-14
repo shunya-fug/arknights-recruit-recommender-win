@@ -154,6 +154,17 @@ public sealed class RecruitmentMonitorService : IDisposable
     /// </summary>
     public IReadOnlyList<string> KnownTags => _knownTags;
 
+    // 直近の判定で見つけたゲームのウィンドウ(見つからなければIntPtr.Zero)。判定は別スレッドで走るため、
+    // UIスレッド側から読めるようvolatileにしている。
+    private volatile IntPtr _gameWindow;
+
+    /// <summary>
+    /// 直近の判定(毎秒のポーリングと手動チェック)で見つけたゲームのウィンドウ。見つからなければnull。
+    /// 通知を出すモニタ・仮想デスクトップを決める時に、UIスレッドで毎回プロセスを列挙し直さずに済むよう、
+    /// 判定のたびに探しているこの結果を使い回す。
+    /// </summary>
+    public IntPtr? GameWindow => _gameWindow == IntPtr.Zero ? null : _gameWindow;
+
     /// <summary>
     /// ユーザーが手動で選んだタグの組み合わせを、OCR結果を介さず直接判定し、現在の区間で通知に
     /// 表示する組み合わせを返す(Issue #32/#34)。ロジック自体は常時監視・手動チェックと同じ
@@ -189,6 +200,7 @@ public sealed class RecruitmentMonitorService : IDisposable
     private async Task<RecruitmentCheckResult?> CheckOnceCoreAsync(RecruitTimeBand band)
     {
         var hwnd = WindowCaptureService.FindWindowByProcessName(GameProcessName);
+        _gameWindow = hwnd ?? IntPtr.Zero;
         if (hwnd is null)
         {
             _captureService.StopSession();
