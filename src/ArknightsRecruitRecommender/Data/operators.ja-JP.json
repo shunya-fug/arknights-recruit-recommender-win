@@ -30,6 +30,16 @@
     ]
   },
   {
+    "Name": "GALLUS\u00B2",
+    "Rarity": 1,
+    "Tags": [
+      "\u8853\u5E2B\u30BF\u30A4\u30D7",
+      "\u9060\u8DDD\u96E2",
+      "\u30ED\u30DC\u30C3\u30C8",
+      "\u5F31\u5316"
+    ]
+  },
+  {
     "Name": "Lancet-2",
     "Rarity": 1,
     "Tags": [
@@ -1474,6 +1484,17 @@
       "\u8853\u5E2B\u30BF\u30A4\u30D7",
       "\u9060\u8DDD\u96E2",
       "\u706B\u529B",
+      "\u4E0A\u7D1A\u30A8\u30EA\u30FC\u30C8"
+    ]
+  },
+  {
+    "Name": "\u30D1\u30E9\u30B9",
+    "Rarity": 6,
+    "Tags": [
+      "\u524D\u885B\u30BF\u30A4\u30D7",
+      "\u8FD1\u8DDD\u96E2",
+      "\u706B\u529B",
+      "\u652F\u63F4",
       "\u4E0A\u7D1A\u30A8\u30EA\u30FC\u30C8"
     ]
   },
