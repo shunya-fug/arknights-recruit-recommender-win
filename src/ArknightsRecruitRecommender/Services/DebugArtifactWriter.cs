@@ -51,7 +51,7 @@ public static class DebugArtifactWriter
         foreach (var combo in result.Combinations)
         {
             var marker = combo.IsRecommended ? "[おすすめ] " : "";
-            sb.AppendLine($"  {marker}[{string.Join(" / ", combo.Tags)}] -> {combo.GuaranteedMinRarity}★以上確定 ({combo.MatchingOperators.Count}件)");
+            sb.AppendLine($"  {marker}[{string.Join(" / ", combo.Tags)}] -> {RarityLabels.Guarantee(combo.GuaranteedMinRarity ?? 0)} ({combo.MatchingOperators.Count}件)");
         }
 
         return sb.ToString();

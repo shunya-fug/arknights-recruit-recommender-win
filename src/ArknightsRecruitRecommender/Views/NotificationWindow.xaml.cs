@@ -361,7 +361,7 @@ public partial class NotificationWindow : Window
         ApplyBandAccent(hint is not null);
         if (hint is { } gain)
         {
-            BandHintText.Text = $"募集時間を{gain.Band.StartLabel()}以上にすると{GuaranteeText(gain.Rarity)}の組み合わせが増えます";
+            BandHintText.Text = $"募集時間を{gain.Band.StartLabel()}以上にすると{RarityLabels.Guarantee(gain.Rarity)}の組み合わせが増えます";
             BandHintText.Foreground = BandWarningBrush;
             BandHintText.Visibility = Visibility.Visible;
         }
@@ -370,13 +370,6 @@ public partial class NotificationWindow : Window
             BandHintText.Visibility = Visibility.Collapsed;
         }
     }
-
-    /// <summary>「★４以上確定」の表記。★６は上限なので「以上」を付けず「★６確定」とする。</summary>
-    private static string GuaranteeText(int rarity) =>
-        rarity >= 6 ? $"★{ToFullWidthDigits(rarity)}確定" : $"★{ToFullWidthDigits(rarity)}以上確定";
-
-    private static string ToFullWidthDigits(int value) =>
-        new(value.ToString().Select(c => (char)('０' + (c - '0'))).ToArray());
 
     /// <summary>
     /// 通知の中身(RootBorder)を表示する。
@@ -501,7 +494,7 @@ public partial class NotificationWindow : Window
         // チップが省略されている場合に限らず、常に全対象者をホバーで確認できるようにする
         // (名前+レアリティを列形式で見せるため、単純な文字列ではなく行データとして保持する)。
         var tooltipRows = sortedOperators
-            .Select(o => new OperatorTooltipRow(o.Name, $"★{ToFullWidthDigits(o.Rarity)}", RarityBrush(o.Rarity)))
+            .Select(o => new OperatorTooltipRow(o.Name, RarityLabels.Star(o.Rarity), RarityBrush(o.Rarity)))
             .ToList();
 
         // ★4以上確定の組み合わせは「★N以上確定」。短い区間で、狙うレアリティが出うる組み合わせ(確定ではない)は
@@ -515,13 +508,13 @@ public partial class NotificationWindow : Window
         if (!r.IsRecommended && r.GuaranteedMinRarity is { } target)
         {
             var targetCount = r.MatchingOperators.Count(o => o.Rarity == target);
-            rarityText = $"★{ToFullWidthDigits(target)}募集可能";
+            rarityText = $"{RarityLabels.Star(target)}募集可能";
             countText = $"{targetCount}/{r.MatchingOperators.Count}件";
             rarityBrush = RarityBrush(target);
         }
         else
         {
-            rarityText = GuaranteeText(r.GuaranteedMinRarity ?? 0);
+            rarityText = RarityLabels.Guarantee(r.GuaranteedMinRarity ?? 0);
             countText = $"{r.MatchingOperators.Count}件";
             rarityBrush = RarityBrush(r.GuaranteedMinRarity);
         }
