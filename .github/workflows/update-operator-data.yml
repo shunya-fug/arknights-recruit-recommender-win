@@ -6,21 +6,53 @@ on:
     - cron: "0 0 * * *"
   workflow_dispatch: {}
 
+# 手動実行と定期実行が重なっても、タグの採番やmainへのコミットが競合しないよう1本ずつ実行する。
+concurrency:
+  group: update-operator-data
+  cancel-in-progress: false
+
+env:
+  DATA_FILE: src/ArknightsRecruitRecommender/Data/operators.ja-JP.json
+
 jobs:
   update-data:
-    runs-on: ubuntu-latest
+    # アプリ本体のテスト(WPF)を実データで実行するため、Windowsで動かす。
+    runs-on: windows-latest
     permissions:
       contents: write
       pull-requests: write
+      # release.ymlをworkflow_dispatchで呼ぶため。
+      actions: write
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
+      # データ更新は、developの作業中の変更を巻き込まないよう、公開済みのmainを元に行う。
+      # タグの採番とdevelopへの取り込みのため、全履歴・全タグを取得する。
       - uses: actions/checkout@v4
         with:
-          ref: develop
+          ref: main
+          fetch-depth: 0
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "8.0.x"
+
+      # 前回の自動更新で、タグは打てたがリリースの呼び出しに失敗していた場合に備えて、リリースが無い
+      # 最新タグがあればここで呼び直す(データはmainに入っているので、以降の比較では差分が出ず、
+      # ここで拾わないと二度とリリースされないため)。実行中・待機中のリリースがある時は二重に呼ばない。
+      - name: Retry a missing release
+        shell: bash
+        run: |
+          latest=$(git tag --list 'v*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1)
+          pending=$(gh run list --workflow release.yml --limit 10 --json status --jq '[.[] | select(.status != "completed")] | length')
+          if [ -n "$latest" ] && [ "$pending" = "0" ] && ! gh release view "$latest" > /dev/null 2>&1; then
+            echo "$latest のリリースが無いため、リリースを呼び出します。"
+            gh workflow run release.yml --ref "$latest"
+          fi
+
+      - name: Run comparison script tests
+        run: node --test .github/scripts/compare-operators.test.mjs
 
       - name: Run data generator tests
         run: dotnet test tools/ArknightsDataGenerator.Tests --configuration Release
@@ -28,27 +60,94 @@ jobs:
       - name: Generate latest operator data
         run: >
           dotnet run --project tools/ArknightsDataGenerator --configuration Release --
-          --output src/ArknightsRecruitRecommender/Data/operators.ja-JP.json
+          --output ${{ env.DATA_FILE }}
 
-      - name: Check for changes
-        id: diff
+      # 差分を、オペレーター単位で「追加」と「削除・変更」に分ける(詳細はスクリプトのコメント参照)。
+      - name: Compare operators
+        id: compare
+        shell: bash
         run: |
-          if git diff --quiet -- src/ArknightsRecruitRecommender/Data/operators.ja-JP.json; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "changed=true" >> "$GITHUB_OUTPUT"
+          git show "HEAD:$DATA_FILE" > "$RUNNER_TEMP/operators-old.json"
+          node .github/scripts/compare-operators.mjs "$RUNNER_TEMP/operators-old.json" "$DATA_FILE"
+
+      # 新しいデータでアプリ本体のテストを実行する(判定ロジックの整合性テストは実データを使っている)。
+      # 失敗しても止めずに、自動リリースではなくPRを作って人の確認に回す。
+      - name: Run app tests with the new data
+        id: apptest
+        if: steps.compare.outputs.changed == 'true'
+        continue-on-error: true
+        run: dotnet test tests/ArknightsRecruitRecommender.Tests --configuration Release
+
+      # オペレーターの追加だけで、テストも通った場合は、mainへコミット→タグ→リリースまで自動で行う。
+      - name: Commit, tag and release
+        id: release
+        if: steps.compare.outputs.changed == 'true' && steps.compare.outputs.additions_only == 'true' && steps.apptest.outcome == 'success'
+        shell: bash
+        env:
+          ADDED: ${{ steps.compare.outputs.added }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add "$DATA_FILE"
+          git commit -m "operators.ja-JP.jsonを最新の公開求人データに更新" -m "追加: $ADDED"
+
+          # 最新のタグ(vX.Y.Z形式のものだけ)のパッチ番号を1つ上げる(例: v0.1.19 → v0.1.20)。
+          latest=$(git tag --list 'v*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1)
+          IFS=. read -r major minor patch <<< "${latest#v}"
+          tag="v${major}.${minor}.$((patch + 1))"
+          git tag "$tag"
+
+          # mainとタグは1回でまとめて送る(片方だけ反映されると、データはmainに入ったのにタグが無く、
+          # 以降の実行では差分が出ないため二度とリリースされなくなる)。
+          git push --atomic origin HEAD:main "$tag"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+          # GITHUB_TOKENで打ったタグではrelease.ymlのpushトリガーが起動しない(GitHubの仕様)ため、
+          # 例外的に許可されているworkflow_dispatchでタグを指定して呼び出す。
+          gh workflow run release.yml --ref "$tag"
+
+      # リリースしたコミットをdevelopにも取り込む。競合した場合や、実行中にdevelopが更新されてプッシュが
+      # 拒否された場合は、developへのPRを作って人に任せる(同じPRが既に開いていれば作らない)。
+      - name: Merge into develop
+        if: steps.release.outcome == 'success'
+        shell: bash
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          set -uo pipefail
+          git checkout -B develop origin/develop
+          if git merge --no-ff "$TAG" -m "Merge $TAG (オペレーターデータの自動更新) into develop" && git push origin develop; then
+            exit 0
           fi
 
-      - name: Create pull request
-        if: steps.diff.outputs.changed == 'true'
+          git merge --abort 2>/dev/null || true
+          open=$(gh pr list --base develop --head main --state open --json number --jq 'length')
+          if [ "$open" = "0" ]; then
+            gh pr create --base develop --head main \
+              --title "$TAG のオペレーターデータ更新をdevelopへ取り込み" \
+              --body "自動リリースした $TAG のデータ更新を、developへ自動で取り込めませんでした(競合、または実行中にdevelopが更新されたため)。mainをdevelopへマージしてください。"
+          fi
+
+      # 削除・変更がある、またはテストが失敗した場合は、自動リリースせずにPRを作って止める。
+      - name: Create pull request for manual review
+        if: steps.compare.outputs.changed == 'true' && steps.release.outcome != 'success'
         uses: peter-evans/create-pull-request@v6
         with:
+          # 同じ作業ディレクトリでビルド・テストも実行しているので、データファイル以外を含めない。
+          add-paths: ${{ env.DATA_FILE }}
           commit-message: "operators.ja-JP.jsonを最新の公開求人データに更新"
-          title: "オペレーター/タグデータの自動更新"
-          body: >
-            ArknightsAssets/ArknightsGamedata の最新データから
-            `tools/ArknightsDataGenerator` を実行して再生成した差分です。
-            マージ前に差分内容(追加・削除されたオペレーター)を確認してください。
+          title: "オペレーター/タグデータの自動更新(要確認)"
+          body: |
+            ArknightsAssets/ArknightsGamedata の最新データから `tools/ArknightsDataGenerator` を実行して再生成した差分です。
+            以下の理由で自動リリースを止めています。差分内容を確認してください。
+
+            - 追加: ${{ steps.compare.outputs.added || 'なし' }}
+            - 削除・変更: ${{ steps.compare.outputs.removed_or_changed || 'なし' }}
+            - アプリのテスト: ${{ steps.apptest.outcome }}
+
+            問題なければマージし、リリース用のタグを作成して、mainをdevelopへ取り込んでください。
           branch: auto-update/operator-data
-          base: develop
+          base: main
           delete-branch: true
