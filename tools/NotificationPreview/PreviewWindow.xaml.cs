@@ -123,5 +123,5 @@ public partial class PreviewWindow : Window
     }
 
     private static string FormatCombination(CombinationResult c) =>
-        $"{(c.IsRecommended ? "★" : " ")} [{string.Join(" / ", c.Tags)}] -> {c.GuaranteedMinRarity}★以上確定 ({c.MatchingOperators.Count}件)";
+        $"{(c.IsRecommended ? "★" : " ")} [{string.Join(" / ", c.Tags)}] -> {RarityLabels.Guarantee(c.GuaranteedMinRarity ?? 0)} ({c.MatchingOperators.Count}件)";
 }

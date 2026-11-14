@@ -1,25 +1,19 @@
 using System.Diagnostics;
-using System.Drawing;
 using System.IO;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Threading;
 using ArknightsRecruitRecommender.Models;
 using ArknightsRecruitRecommender.Services;
 using ArknightsRecruitRecommender.Views;
 using H.NotifyIcon;
+using Icon = System.Drawing.Icon;
 using Language = Windows.Globalization.Language;
 
 namespace ArknightsRecruitRecommender;
 
 public partial class App : Application
 {
-    // 常駐アプリとして数日〜数週間起動しっぱなしになりうるため、起動時1回だけでなく定期的に
-    // 再確認する。GitHub APIの無認証レート制限(60回/時)に対して十分小さい頻度。
-    private static readonly TimeSpan UpdateCheckInterval = TimeSpan.FromHours(24);
-
-    // 自己アップデート(約75MBのダウンロードと置き換え)全体のタイムアウト。
-    private static readonly TimeSpan SelfUpdateTimeout = TimeSpan.FromMinutes(10);
-
     private TaskbarIcon? _trayIcon;
     private RecruitmentMonitorService? _monitor;
     private NotificationWindow? _notificationWindow;
@@ -28,18 +22,9 @@ public partial class App : Application
     // 参照を保持し、再度「タグを編集」が押されたら新規に開かず既存のウィンドウを前面に出す。
     private TagEditWindow? _tagEditWindow;
     private AppSettings _settings = AppSettings.Default;
-    private System.Threading.Timer? _updateCheckTimer;
-    private System.Windows.Controls.MenuItem? _versionMenuItem;
-    private System.Windows.Controls.TextBlock? _versionText;
-    private System.Windows.Documents.Run? _versionRun;
-    private System.Windows.Documents.Run? _updateBadgeRun;
-    private UpdateCheckService.UpdateInfo? _availableUpdate;
-    private bool _isUpdating;
 
-    // Windowsの標準アクセントカラー。更新可能であることを、警告色(赤)ほど強くなく、
-    // かといって無効化されたように見えるグレーでもない色で示すため。
-    private static readonly System.Windows.Media.Brush UpdateAvailableBrush =
-        new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x00, 0x78, 0xD4));
+    // トレイメニューのバージョン表示と、更新確認・自己アップデート。
+    private UpdateMenuController? _updateMenu;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -61,6 +46,8 @@ public partial class App : Application
 
         _settings = AppSettingsStore.Load();
 
+        _updateMenu = new UpdateMenuController(RestartApplicationAsync);
+
         _trayIcon = (TaskbarIcon)FindResource("TrayIcon");
         _trayIcon.Icon = LoadTrayIcon();
         _trayIcon.ContextMenu = BuildContextMenu();
@@ -77,12 +64,12 @@ public partial class App : Application
         // Windowsが起動中カーソル(ローディング表示)を出し続けてしまう。トレイアイコンの
         // 表示を優先し、メッセージループが動き出した直後に非同期で開始することで、
         // 起動時のカーソル表示を短縮する。
-        // RefreshStartupRegistrationPathIfNeeded()のレジストリ書き込みも通常は1ms未満だが、
+        // StartupRegistration.RefreshPathIfRegistered()のレジストリ書き込みも通常は1ms未満だが、
         // ウイルス対策ソフトによるフック等で遅くなる可能性はゼロではないため、同じ理由で
         // ここに合わせて遅延させる。
         Dispatcher.BeginInvoke(new Action(() =>
         {
-            RefreshStartupRegistrationPathIfNeeded();
+            StartupRegistration.RefreshPathIfRegistered();
             // 前回の自己アップデートで残った置き換え前のexe(.old)を片付ける。古いプロセスの終了待ちで
             // 数秒かかることがあるため、完了を待たずバックグラウンドで行う(失敗しても動作に影響しない)。
             _ = SelfUpdateService.CleanupLeftoversAsync(Environment.ProcessPath);
@@ -90,167 +77,7 @@ public partial class App : Application
             DiagnosticLog.Write("[起動] 監視サービス初期化完了(D3D11デバイス・OCRエンジン作成を含む)");
         }), DispatcherPriority.Background);
 
-        // 監視サービスの初期化とは無関係な処理のため、独立してバックグラウンドで実行する。
-        // 起動時に即座に1回実行し(dueTime: Zero)、以後UpdateCheckIntervalおきに再確認する。
-        _updateCheckTimer = new System.Threading.Timer(
-            _ => Dispatcher.BeginInvoke(new Action(async () => await CheckForUpdateAsync()), DispatcherPriority.Background),
-            null,
-            TimeSpan.Zero,
-            UpdateCheckInterval);
-    }
-
-    private static Version GetCurrentVersion() =>
-        System.Reflection.Assembly.GetExecutingAssembly().GetName().Version ?? new Version(0, 0, 0, 0);
-
-    // アセンブリのバージョンは常に4桁(例: 0.1.9.0)だが、GitHubのリリースタグ表記
-    // (例: v0.1.9)に合わせて3桁+"v"接頭辞の形で表示する。
-    private static string FormatVersion(Version version) => $"v{version.Major}.{version.Minor}.{version.Build}";
-
-    /// <summary>
-    /// GitHub Releasesの最新版を確認し、実行中のバージョンより新しければコンテキストメニューの
-    /// バージョン表示欄に反映する(Issue #27)。サーバーとの通信を伴う機能ではなく強制更新の
-    /// 必要も無いため、モーダルダイアログのような割り込みはせず、メニューを開いたときに
-    /// 気づける程度の控えめな見せ方にしている。オフライン・API制限等で確認自体に失敗しても、
-    /// ログに残すだけでアプリの動作は妨げない。
-    /// </summary>
-    private async Task CheckForUpdateAsync()
-    {
-        try
-        {
-            var currentVersion = GetCurrentVersion();
-            var update = await UpdateCheckService.CheckForUpdateAsync(currentVersion);
-            if (update is not null)
-            {
-                DiagnosticLog.Write($"[更新確認] 新しいバージョンがあります: {update.LatestVersion}");
-            }
-
-            ApplyVersionMenuState(currentVersion, update);
-        }
-        catch (Exception ex)
-        {
-            DiagnosticLog.Write($"[更新確認] 確認に失敗しました(次回の定期確認まで待機): {ex}");
-        }
-    }
-
-    /// <summary>
-    /// バージョン表示メニュー項目を、確認結果に応じた表示に切り替える。
-    /// 呼び出し元(CheckForUpdateAsync)はDispatcher.BeginInvoke経由でUIスレッド上で実行される
-    /// ため、ここでUI要素を直接操作してよい。
-    /// </summary>
-    private void ApplyVersionMenuState(Version currentVersion, UpdateCheckService.UpdateInfo? update)
-    {
-        if (_versionRun is null || _updateBadgeRun is null || _versionMenuItem is null)
-        {
-            return;
-        }
-
-        _versionRun.Text = FormatVersion(currentVersion);
-
-        if (update is null)
-        {
-            _updateBadgeRun.Text = "";
-            _versionMenuItem.IsEnabled = false;
-            _availableUpdate = null;
-        }
-        else
-        {
-            _updateBadgeRun.Text = "（更新可能）";
-            _versionMenuItem.IsEnabled = true;
-            _availableUpdate = update;
-        }
-    }
-
-    /// <summary>
-    /// バージョン表示メニュー項目のクリック処理。更新が無い間はIsEnabled=falseにしてあるため、
-    /// ホバー時のハイライトやクリック自体が発生しない(項目が存在を主張しすぎないようにするため)。
-    /// 更新用zipの情報が揃い、exeのフォルダに書き込める場合は、確認ダイアログのうえで自己アップデート
-    /// して再起動する(<see cref="SelfUpdateService"/>)。
-    /// それ以外(開発実行・書き込み不可・zip情報なし)や、自己アップデートに失敗した場合は、
-    /// 従来どおりリリースページを開く。
-    /// </summary>
-    private async void OnVersionMenuItemClick(object sender, RoutedEventArgs e)
-    {
-        var update = _availableUpdate;
-        if (update is null || _isUpdating)
-        {
-            return;
-        }
-
-        try
-        {
-            // 置き換え後は実行中のプロセスのモジュールのパスが.oldへ変わるため、置き換え前に取得する。
-            var exePath = Environment.ProcessPath;
-            if (!SelfUpdateService.CanSelfUpdate(update, exePath))
-            {
-                OpenReleasePage(update.HtmlUrl);
-                return;
-            }
-
-            // 確認ダイアログの表示中にメニューから再度クリックされてダイアログが二重に出ないよう、
-            // ダイアログを出す前から更新中として扱う(「いいえ」の場合は戻す)。
-            _isUpdating = true;
-
-            var sizeText = update.AssetSizeBytes is { } bytes ? $"約{bytes / 1024 / 1024}MB" : "ダウンロード";
-            var confirm = await ShowMessageBoxAsync(
-                $"{FormatVersion(update.LatestVersion)}に更新します。{sizeText}をダウンロードして、自動的に再起動します。\n\nよろしいですか？",
-                "更新",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Question);
-            if (confirm != MessageBoxResult.Yes)
-            {
-                _isUpdating = false;
-                return;
-            }
-
-            _versionMenuItem!.IsEnabled = false;
-            _updateBadgeRun!.Text = "（更新中…）";
-            DiagnosticLog.Write($"[自己更新] {FormatVersion(update.LatestVersion)}への更新を開始: {exePath}");
-
-            try
-            {
-                // 通信が止まって「更新中…」のまま戻らなくならないよう、全体にタイムアウトをかける。
-                using var timeout = new CancellationTokenSource(SelfUpdateTimeout);
-                await SelfUpdateService.ApplyUpdateAsync(update, exePath!, timeout.Token);
-            }
-            catch (Exception ex)
-            {
-                DiagnosticLog.Write($"[自己更新] 失敗: {ex}");
-                var openPage = await ShowMessageBoxAsync(
-                    $"自動更新に失敗しました。リリースページを開きますか？\n\n{ex.Message}",
-                    "更新",
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Warning);
-                if (openPage == MessageBoxResult.Yes)
-                {
-                    OpenReleasePage(update.HtmlUrl);
-                }
-
-                _isUpdating = false;
-                ApplyVersionMenuState(GetCurrentVersion(), update);
-                return;
-            }
-
-            DiagnosticLog.Write("[自己更新] 置き換え完了、再起動します");
-            await RestartApplicationAsync(exePath, "更新");
-        }
-        catch (Exception ex)
-        {
-            // async voidのため、ここで握りつぶさないとアプリ全体がクラッシュする。
-            DiagnosticLog.Write($"[自己更新] 想定外のエラー: {ex}");
-            _isUpdating = false;
-        }
-    }
-
-    private static void OpenReleasePage(string url)
-    {
-        try
-        {
-            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
-        }
-        catch (Exception ex)
-        {
-            DiagnosticLog.Write($"[更新確認] リリースページを開けませんでした: {ex}");
-        }
+        _updateMenu.Start();
     }
 
     /// <summary>
@@ -280,8 +107,7 @@ public partial class App : Application
     /// </summary>
     private void OnRecruitTimeBandChanged(RecruitTimeBand band)
     {
-        _settings = _settings with { RecruitTimeBand = band };
-        AppSettingsStore.Save(_settings);
+        SaveSettings(_settings with { RecruitTimeBand = band });
         _monitor!.RecruitTimeBand = band;
 
         if (_notificationWindow!.HasStaticResults)
@@ -312,11 +138,11 @@ public partial class App : Application
         _tagEditWindow.Show();
     }
 
-    private System.Windows.Controls.ContextMenu BuildContextMenu()
+    private ContextMenu BuildContextMenu()
     {
-        var menu = new System.Windows.Controls.ContextMenu();
+        var menu = new ContextMenu();
 
-        var manualCheckItem = new System.Windows.Controls.MenuItem { Header = "手動チェック実行" };
+        var manualCheckItem = new MenuItem { Header = "手動チェック実行" };
         manualCheckItem.Click += async (_, _) => await RunManualCheckAsync();
         menu.Items.Add(manualCheckItem);
 
@@ -328,52 +154,45 @@ public partial class App : Application
         // レジストリの値そのものを正とする(AppSettingsに独自の状態を持たない)ため、
         // タスクマネージャーのスタートアップタブ等から直接変更された場合にもズレないよう、
         // メニューを開く直前に毎回チェック状態を読み直す。読み取り自体は高速(1ms未満)。
-        menu.Opened += (_, _) => startupItem.IsChecked = IsRegisteredForStartup();
+        menu.Opened += (_, _) => startupItem.IsChecked = StartupRegistration.IsRegistered();
 
-        menu.Items.Add(new System.Windows.Controls.Separator());
-        menu.Items.Add(BuildVersionMenuItem());
+        menu.Items.Add(new Separator());
+        menu.Items.Add(_updateMenu!.MenuItem);
 
-        menu.Items.Add(new System.Windows.Controls.Separator());
+        menu.Items.Add(new Separator());
 
-        var exitItem = new System.Windows.Controls.MenuItem { Header = "終了" };
+        var exitItem = new MenuItem { Header = "終了" };
         exitItem.Click += (_, _) => Shutdown();
         menu.Items.Add(exitItem);
 
         return menu;
     }
 
-    /// <summary>
-    /// トレイのコンテキストメニュー項目のクリック直後にMessageBox.Showを呼ぶと、メニューを
-    /// 閉じたクリックの入力メッセージがそのまま新しいダイアログに流れ込み、表示直後に自動的に
-    /// 閉じてしまう不具合を実機で確認した(表示から149ms後に閉じており、人がクリックできる
-    /// 速さではなかった)。入力キューが落ち着くまで少し待ってから表示することで回避する。
-    /// メニュー項目のクリックハンドラから表示するダイアログは、必ずこれ経由で表示すること。
-    /// </summary>
-    private static async Task<MessageBoxResult> ShowMessageBoxAsync(
-        string text, string caption, MessageBoxButton button, MessageBoxImage icon)
+    /// <summary>設定を更新し、すぐにファイルへ保存する(トレイメニュー・通知ウィンドウからの変更用)。</summary>
+    private void SaveSettings(AppSettings settings)
     {
-        await Task.Delay(200);
-        return MessageBox.Show(text, caption, button, icon);
+        _settings = settings;
+        AppSettingsStore.Save(settings);
     }
 
     // MenuItemのIsCheckableはラジオボタンのような排他選択を自動ではしてくれない
     // (クリックされた項目自身のIsCheckedがトグルされるだけ)ため、兄弟項目のチェック状態は
     // このリストを使って手動で管理する。
-    private readonly List<(string Locale, System.Windows.Controls.MenuItem Item)> _languageMenuItems = new();
+    private readonly List<(string Locale, MenuItem Item)> _languageMenuItems = new();
 
     /// <summary>
     /// 「言語」サブメニュー。選択肢はData/operators.{locale}.jsonの存在から動的に決まる
     /// (新しい言語のデータファイルを追加するだけで選択肢に反映される)。
     /// </summary>
-    private System.Windows.Controls.MenuItem BuildLanguageMenuItem()
+    private MenuItem BuildLanguageMenuItem()
     {
-        var languageMenu = new System.Windows.Controls.MenuItem { Header = "言語" };
+        var languageMenu = new MenuItem { Header = "言語" };
         _languageMenuItems.Clear();
 
         foreach (var locale in OperatorDataProvider.GetAvailableLocales())
         {
             var language = new Language(locale);
-            var item = new System.Windows.Controls.MenuItem
+            var item = new MenuItem
             {
                 Header = language.DisplayName,
                 IsCheckable = true,
@@ -398,7 +217,7 @@ public partial class App : Application
         var language = new Language(locale);
         if (!TagOcrService.IsLanguageAvailable(language))
         {
-            var proceed = await ShowMessageBoxAsync(
+            var proceed = await TrayDialogs.ShowMessageBoxAsync(
                 $"「{language.DisplayName}」のOCR言語パックがこの端末にインストールされていません。" +
                 "このまま切り替えても、パックを追加するまで画面のタグを認識できません。\n\n" +
                 "切り替えを続けますか？（設定 > 時刻と言語 > 言語と地域 から追加できます）",
@@ -413,11 +232,10 @@ public partial class App : Application
             }
         }
 
-        _settings = _settings with { Locale = locale };
-        AppSettingsStore.Save(_settings);
+        SaveSettings(_settings with { Locale = locale });
         SetCheckedLanguage(locale);
 
-        var restartNow = await ShowMessageBoxAsync(
+        var restartNow = await TrayDialogs.ShowMessageBoxAsync(
             "言語設定を変更しました。反映するにはアプリの再起動が必要です。今すぐ再起動しますか？",
             "言語設定",
             MessageBoxButton.YesNo,
@@ -425,7 +243,7 @@ public partial class App : Application
 
         if (restartNow == MessageBoxResult.Yes)
         {
-            await RestartApplicationAsync();
+            await RestartApplicationAsync(Environment.ProcessPath, "言語設定");
         }
     }
 
@@ -437,20 +255,20 @@ public partial class App : Application
         }
     }
 
-    private readonly List<(NotificationPosition Position, System.Windows.Controls.MenuItem Item)> _positionMenuItems = new();
+    private readonly List<(NotificationPosition Position, MenuItem Item)> _positionMenuItems = new();
 
     /// <summary>
     /// 「通知の表示位置」サブメニュー。言語設定と異なりOCR等の再初期化を伴わないため、
     /// 選択直後に表示中の通知ウィンドウへ即時反映し、アプリ再起動は不要にする(Issue #11)。
     /// </summary>
-    private System.Windows.Controls.MenuItem BuildNotificationPositionMenuItem()
+    private MenuItem BuildNotificationPositionMenuItem()
     {
-        var positionMenu = new System.Windows.Controls.MenuItem { Header = "通知の表示位置" };
+        var positionMenu = new MenuItem { Header = "通知の表示位置" };
         _positionMenuItems.Clear();
 
         foreach (var (position, label) in NotificationPositionLabels.Options)
         {
-            var item = new System.Windows.Controls.MenuItem
+            var item = new MenuItem
             {
                 Header = label,
                 IsCheckable = true,
@@ -471,8 +289,7 @@ public partial class App : Application
             return;
         }
 
-        _settings = _settings with { NotificationPosition = position };
-        AppSettingsStore.Save(_settings);
+        SaveSettings(_settings with { NotificationPosition = position });
 
         foreach (var (itemPosition, item) in _positionMenuItems)
         {
@@ -486,9 +303,9 @@ public partial class App : Application
     /// 「通知をコンパクト表示」トグル。位置設定と同様、選択直後に表示中の通知ウィンドウへ
     /// 即時反映し、アプリ再起動は不要にする。
     /// </summary>
-    private System.Windows.Controls.MenuItem BuildCompactDisplayMenuItem()
+    private MenuItem BuildCompactDisplayMenuItem()
     {
-        var item = new System.Windows.Controls.MenuItem
+        var item = new MenuItem
         {
             Header = "通知をコンパクト表示",
             IsCheckable = true,
@@ -500,146 +317,37 @@ public partial class App : Application
         return item;
     }
 
-    /// <summary>
-    /// 現在のバージョンを表示するメニュー項目。バージョン文字列と、更新可能なときだけ添える
-    /// 括弧書きのバッジ("（更新可能）")を1つのTextBlock(Run2つ)にまとめてHeaderに使う。
-    /// 更新が無い間はIsEnabled=falseにして無効化する(ホバー・クリックの見た目を出さないため)。
-    /// CheckForUpdateAsyncの確認結果に応じた表示更新はApplyVersionMenuStateが後から行う
-    /// (_versionRun/_updateBadgeRunを保持)。
-    /// </summary>
-    private System.Windows.Controls.MenuItem BuildVersionMenuItem()
-    {
-        // 右寄せのバッジ列(Grid)にしようとしたが、既定のMenuItemテンプレートがヘッダーの
-        // ContentPresenterを内容に合わせた幅にしてしまい、列を分けても右端まで伸びなかった
-        // (テンプレートを丸ごと差し替えるほどの手間には見合わないため断念)。素直に
-        // バージョン文字列の直後に括弧書きで添える形に戻し、色分けだけ残す。
-        _versionRun = new System.Windows.Documents.Run(FormatVersion(GetCurrentVersion()));
-        _updateBadgeRun = new System.Windows.Documents.Run
-        {
-            Foreground = UpdateAvailableBrush,
-            FontWeight = FontWeights.Bold,
-        };
-
-        _versionText = new System.Windows.Controls.TextBlock
-        {
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        // MenuItem.IsEnabled=falseの既定スタイルは前景色を薄いグレーに差し替えるが、DynamicResource
-        // 参照もローカル値と同じ優先度で扱われるため、これを設定しておけば無効化時にも通常の文字色の
-        // まま表示される。SystemColors.MenuTextBrush(静的スナップショット)ではなくキー経由の
-        // DynamicResourceにしているのは、アプリ起動中にOSのテーマ(ライト/ダーク等)が変わっても
-        // 他のメニュー項目と同様に追従させるため。
-        _versionText.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, System.Windows.SystemColors.MenuTextBrushKey);
-        _versionText.Inlines.Add(_versionRun);
-        _versionText.Inlines.Add(_updateBadgeRun);
-
-        _versionMenuItem = new System.Windows.Controls.MenuItem
-        {
-            Header = _versionText,
-            IsEnabled = false,
-        };
-        _versionMenuItem.Click += OnVersionMenuItemClick;
-        return _versionMenuItem;
-    }
-
     private void OnCompactDisplayToggled(bool isChecked)
     {
-        _settings = _settings with { CompactNotificationDisplay = isChecked };
-        AppSettingsStore.Save(_settings);
+        SaveSettings(_settings with { CompactNotificationDisplay = isChecked });
         _notificationWindow?.SetCompactDisplay(isChecked);
-    }
-
-    private const string StartupRegistryKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
-
-    // AppDataPaths.RootDirectoryと同様、Debug構成/テストホストからの実行では別の値名を使う。
-    // 同じ値名のままだと、開発者がdotnet run/dotnet test経由でこのトグルをローカル検証した際、
-    // bin/Debug配下の一時的なビルドパスがHKCU\...\Runに永続登録されてしまい、実機のWindows
-    // ログイン時にそのビルドを起動しようとし続ける(削除後は起動に失敗する)不具合につながる。
-    private static readonly string StartupRegistryValueName =
-        AppDataPaths.IsLocalDevOrTest ? "ArknightsRecruitRecommender.Debug" : "ArknightsRecruitRecommender";
-
-    /// <summary>
-    /// 自動起動が既に有効な場合、レジストリの起動パスを現在実行中のexeのパスへ上書きする
-    /// (自己修復)。このアプリはインストーラを持たず、リリースのたびに別フォルダへ展開する
-    /// 運用のため、パスをexe移動・バージョン更新のたびに手動で登録し直す必要がある(登録済み
-    /// フラグはレジストリの値の有無だけで判定しているため、古いパスのままでも「有効」に
-    /// 見えてしまい気づきにくい)。アプリを起動するたびにこの処理を通すことで、ユーザーが
-    /// 移動先・新バージョンを一度でも手動起動すれば古いパス情報が残り続けることはない。
-    /// (一度も手動起動しないままexeを移動・削除した場合は対象外。この処理自体が実行されない
-    /// ため)。
-    /// </summary>
-    private static void RefreshStartupRegistrationPathIfNeeded()
-    {
-        if (IsRegisteredForStartup())
-        {
-            SetStartupRegistration(true);
-        }
     }
 
     /// <summary>
     /// 「Windows起動時に自動起動」トグル。AppSettingsには独自の状態を持たず、
-    /// レジストリ(HKCU\...\Run)の実際の値そのものを正とする(IsRegisteredForStartup参照)。
+    /// レジストリ(HKCU\...\Run)の実際の値そのものを正とする(<see cref="StartupRegistration"/>参照)。
     /// </summary>
-    private System.Windows.Controls.MenuItem BuildStartupMenuItem()
+    private MenuItem BuildStartupMenuItem()
     {
-        var item = new System.Windows.Controls.MenuItem
+        var item = new MenuItem
         {
             Header = "Windows起動時に自動起動",
             IsCheckable = true,
-            IsChecked = IsRegisteredForStartup(),
+            IsChecked = StartupRegistration.IsRegistered(),
         };
-        item.Click += (_, _) => SetStartupRegistration(item.IsChecked);
+        item.Click += (_, _) => StartupRegistration.SetRegistered(item.IsChecked);
         return item;
     }
 
-    private static bool IsRegisteredForStartup()
-    {
-        try
-        {
-            using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(StartupRegistryKeyPath, writable: false);
-            return key?.GetValue(StartupRegistryValueName) is string;
-        }
-        catch (Exception ex)
-        {
-            DiagnosticLog.Write($"[スタートアップ登録] 確認に失敗しました: {ex}");
-            return false;
-        }
-    }
-
-    private static void SetStartupRegistration(bool enabled)
-    {
-        try
-        {
-            using var key = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(StartupRegistryKeyPath, writable: true);
-            if (enabled)
-            {
-                var exePath = Process.GetCurrentProcess().MainModule?.FileName;
-                if (exePath is not null)
-                {
-                    key.SetValue(StartupRegistryValueName, $"\"{exePath}\"");
-                }
-            }
-            else
-            {
-                key.DeleteValue(StartupRegistryValueName, throwOnMissingValue: false);
-            }
-        }
-        catch (Exception ex)
-        {
-            DiagnosticLog.Write($"[スタートアップ登録] 変更に失敗しました: {ex}");
-        }
-    }
-
     /// <param name="exePath">
-    /// 再起動するexeのパス。省略時は実行中のexe。自己アップデート後は、プロセスのモジュールのパスが
-    /// 置き換え前のexe(.old)を指すため、置き換え前に取得した値を渡す。
+    /// 再起動するexeのパス。自己アップデート後は、プロセスのモジュールのパスが置き換え前のexe(.old)を
+    /// 指すため、置き換え前に取得した値を渡す。それ以外では<see cref="Environment.ProcessPath"/>でよい。
     /// </param>
     /// <param name="caption">失敗時のダイアログのタイトル。</param>
-    private async Task RestartApplicationAsync(string? exePath = null, string caption = "言語設定")
+    private async Task RestartApplicationAsync(string? exePath, string caption)
     {
         try
         {
-            exePath ??= Process.GetCurrentProcess().MainModule?.FileName;
             if (exePath is not null)
             {
                 Process.Start(exePath);
@@ -649,7 +357,7 @@ public partial class App : Application
         {
             // 自動再起動に失敗しても、これから終了すること自体は変わらない。手動での
             // 再起動をお願いするだけにとどめ、原因不明のクラッシュとして落とさない。
-            await ShowMessageBoxAsync(
+            await TrayDialogs.ShowMessageBoxAsync(
                 $"アプリの自動再起動に失敗しました。手動で起動し直してください。\n\n{ex.Message}",
                 caption,
                 MessageBoxButton.OK,
@@ -679,7 +387,7 @@ public partial class App : Application
             DiagnosticLog.Write($"[手動チェック] CheckOnceAsync完了: result={(result is null ? "null" : "非null")}");
             if (result is null)
             {
-                await ShowMessageBoxAsync(
+                await TrayDialogs.ShowMessageBoxAsync(
                     "アークナイツの画面を取得できませんでした。ゲームが起動しているか、" +
                     "ウィンドウが最小化されていないか確認してください。",
                     "手動チェック実行",
@@ -703,7 +411,7 @@ public partial class App : Application
         catch (Exception ex)
         {
             DiagnosticLog.Write($"[手動チェック] 例外発生: {ex}");
-            await ShowMessageBoxAsync(
+            await TrayDialogs.ShowMessageBoxAsync(
                 $"手動チェック実行中にエラーが発生しました:\n{ex}",
                 "手動チェック実行",
                 MessageBoxButton.OK,
@@ -728,7 +436,7 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
-        _updateCheckTimer?.Dispose();
+        _updateMenu?.Dispose();
         _monitor?.Dispose();
         _trayIcon?.Dispose();
         base.OnExit(e);

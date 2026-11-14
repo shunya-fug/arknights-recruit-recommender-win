@@ -12,7 +12,7 @@ namespace ArknightsRecruitRecommender.Services;
 /// </summary>
 public static class DebugArtifactWriter
 {
-    public static string Write(RecruitmentCheckResult result, string outputDirectory)
+    public static void Write(RecruitmentCheckResult result, string outputDirectory)
     {
         Directory.CreateDirectory(outputDirectory);
         var timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
@@ -22,8 +22,6 @@ public static class DebugArtifactWriter
 
         var summaryPath = Path.Combine(outputDirectory, $"{timestamp}_result.txt");
         File.WriteAllText(summaryPath, BuildSummary(result), Encoding.UTF8);
-
-        return outputDirectory;
     }
 
     private static void SavePng(BitmapSource frame, string path)
@@ -53,7 +51,7 @@ public static class DebugArtifactWriter
         foreach (var combo in result.Combinations)
         {
             var marker = combo.IsRecommended ? "[おすすめ] " : "";
-            sb.AppendLine($"  {marker}[{string.Join(" / ", combo.Tags)}] -> {combo.GuaranteedMinRarity}★以上確定 ({combo.MatchingOperators.Count}件)");
+            sb.AppendLine($"  {marker}[{string.Join(" / ", combo.Tags)}] -> {RarityLabels.Guarantee(combo.GuaranteedMinRarity ?? 0)} ({combo.MatchingOperators.Count}件)");
         }
 
         return sb.ToString();

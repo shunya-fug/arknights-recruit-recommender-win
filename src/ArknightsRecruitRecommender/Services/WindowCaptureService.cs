@@ -61,7 +61,7 @@ public sealed class WindowCaptureService : IDisposable
             }
             catch
             {
-                // Some processes throw when queried (access denied, exited mid-enumeration); skip them.
+                // 問い合わせると例外になるプロセス(アクセス拒否、列挙中に終了したもの)は読み飛ばす。
             }
         }
 

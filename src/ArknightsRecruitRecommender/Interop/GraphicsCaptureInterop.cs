@@ -7,10 +7,9 @@ using WinRT;
 namespace ArknightsRecruitRecommender.Interop;
 
 /// <summary>
-/// Raw interop needed to bridge Win32 (HWND, ID3D11Device) into the WinRT
-/// Windows.Graphics.Capture APIs. There is no managed wrapper for this in .NET, so it has to
-/// be done by hand. This is the most version-fragile part of the app - if it stops compiling
-/// after a CsWinRT/.NET SDK upgrade, this is the first place to look.
+/// Win32の世界(HWND・ID3D11Device)とWinRTのWindows.Graphics.Capture APIを橋渡しする、素の相互運用コード。
+/// .NETにはこの部分のマネージドなラッパーが無いため、自前で書いている。アプリの中で最もバージョンの
+/// 影響を受けやすい箇所なので、CsWinRTや.NET SDKの更新後にビルドが通らなくなった場合は、まずここを疑うこと。
 /// </summary>
 internal static partial class GraphicsCaptureInterop
 {

@@ -175,8 +175,11 @@ Release配布ビルド（GitHub Releasesで配る自己完結exe）では書き�
 
 ```
 src/ArknightsRecruitRecommender/
-  App.xaml(.cs)              トレイアイコンの起動・監視サービスの配線
-  Interop/                   Windows.Graphics.Capture を使うための低レベル相互運用コード
+  App.xaml(.cs)              トレイアイコン・トレイメニューの起動と、監視サービス・通知ウィンドウの配線
+  Interop/
+    GraphicsCaptureInterop.cs   Windows.Graphics.Capture を使うための低レベル相互運用コード
+    WindowPlacementInterop.cs   ゲームのウィンドウがあるモニタ・仮想デスクトップの取得と、通知の移動
+  Models/                    設定・判定結果・募集時間の区間・レアリティの表記(RarityLabels)など
   Services/
     WindowCaptureService.cs  ゲームウィンドウのキャプチャセッション管理・フレーム取得
     TagOcrService.cs         OCRラッパー
@@ -185,9 +188,19 @@ src/ArknightsRecruitRecommender/
     RecruitmentAnalyzer.cs   タグ組み合わせ（1〜3個）ごとの確定レアリティ判定ロジック
     RecruitmentMonitorService.cs  上記を束ねるポーリングループ
     OperatorDataProvider.cs  オペレーター/タグデータの読み込み・利用可能ロケール一覧の取得
-    AppSettingsStore.cs      言語設定の永続化(%LOCALAPPDATA%配下のJSON)
+    AppSettingsStore.cs      設定(言語・通知の位置・募集時間の区間など)の永続化(%LOCALAPPDATA%配下のJSON)
+    NotificationPlacement.cs 通知ウィンドウを作業領域の隅に置く座標の計算
+    StartupRegistration.cs   Windows起動時の自動起動の登録(HKCU\...\Run)
+    UpdateCheckService.cs    GitHub Releasesの最新版の確認
+    SelfUpdateService.cs     更新用zipのダウンロード・検証と、実行中のexeの置き換え
   Data/operators.ja-JP.json  オペレーター/タグデータ（日本版実データ。上記「既知の制約」参照）
-  Views/NotificationWindow.xaml(.cs)  画面隅の常時最前面通知ウィンドウ
+  Views/
+    NotificationWindow.xaml(.cs)  画面隅の常時最前面通知ウィンドウ
+    TagEditWindow.xaml(.cs)       検出タグを手動で補正する編集ウィンドウ
+    TagSelectorPanel.xaml(.cs)    タグ選択UI(タグ編集ウィンドウと開発補助ツールで共通)
+    UpdateMenuController.cs       トレイメニューのバージョン表示と、更新確認・自己アップデートの流れ
+    TrayDialogs.cs                トレイメニューから出すダイアログ
+    DarkTheme.xaml                ボタン・スクロールバー等の暗色スタイル
 tests/ArknightsRecruitRecommender.Tests/  各Serviceの単体テスト
 tools/ArknightsDataGenerator/
   RecruitDetailParser.cs       gacha_table.jsonのrecruitDetailをレア度別名簿にパース

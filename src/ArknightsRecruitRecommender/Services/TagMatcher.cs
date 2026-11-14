@@ -1,10 +1,9 @@
 namespace ArknightsRecruitRecommender.Services;
 
 /// <summary>
-/// Matches raw OCR output against the known tag vocabulary. OCR of the in-game font is not
-/// always exact (mis-read characters, split/merged words), so this uses exact-match plus
-/// edit-distance tolerance rather than requiring a byte-for-byte match. Substring containment
-/// is intentionally NOT used as a match condition; see the comment at its removal site.
+/// OCRの生の結果を、既知のタグ一覧と照合する。ゲーム内フォントのOCRは常に正確とは限らない
+/// (文字の誤読、単語の分割・結合)ため、完全一致だけでなく編集距離による許容も行う。
+/// 部分文字列として含むかどうかは、意図的に一致条件にしていない(理由はMatchKnownTags内のコメント参照)。
 /// </summary>
 public static class TagMatcher
 {
