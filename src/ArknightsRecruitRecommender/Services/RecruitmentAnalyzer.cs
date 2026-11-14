@@ -3,11 +3,10 @@ using ArknightsRecruitRecommender.Models;
 namespace ArknightsRecruitRecommender.Services;
 
 /// <summary>
-/// Evaluates the recruitment tag guarantee logic: any subset of 1-3 selected tags whose
-/// matching operator pool has a minimum rarity of 4 stars or higher is a "good" combination.
-/// This mirrors the game's own rule (subsets larger than 3 tags are never evaluated), so no
-/// special-casing for robots / senior operators is needed as long as the operator data's tag
-/// lists are accurate.
+/// 公開求人のタグの組み合わせを判定する。選んだタグのうち1〜3個の部分集合ごとに、一致する
+/// オペレーターの最低レアリティが★4以上なら「おすすめ」の組み合わせとする。ゲーム自体の仕様
+/// (4個以上のタグの組み合わせは判定されない)をそのまま再現しているため、オペレーターデータの
+/// タグが正確であれば、ロボットやエリートのための特別扱いは要らない。
 ///
 /// 唯一の例外が★6("上級エリート"タグを持つオペレーター): ゲーム仕様上、★6は募集タグに
 /// "上級エリート"(EN版では"Top Operator")そのものを含めない限り絶対に出現しない

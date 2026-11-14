@@ -125,13 +125,6 @@ public sealed class RecruitmentMonitorService : IDisposable
     }
 
     /// <summary>
-    /// キャプチャ→OCR→タグ照合→組み合わせ判定を1回分実行し、途中経過も含めた結果を返す。
-    /// 常時監視のポーリングタイマーと、トレイメニュー「手動チェック実行」による手動実行の
-    /// 両方から呼ばれる。呼び出しは<see cref="_checkGate"/>で直列化しているため、両者が
-    /// 同時に発生しても<see cref="_captureService"/>の内部状態が競合することはない。
-    /// </summary>
-    /// <returns>ゲームウィンドウが見つからない、またはフレームを取得できなかった場合はnull。</returns>
-    /// <summary>
     /// 想定する募集時間の区間(Issue #34)。変更後は、次のポーリング(最大<see cref="PollInterval"/>後)
     /// で、同じタグの検出結果であっても新しい区間で再判定した結果が通知される。
     /// </summary>
@@ -159,7 +152,7 @@ public sealed class RecruitmentMonitorService : IDisposable
     private volatile IntPtr _gameWindow;
 
     /// <summary>
-    /// 直近の判定(毎秒のポーリングと手動チェック)で見つけたゲームのウィンドウ。見つからなければnull。
+    /// 直近の判定(常時監視のポーリングと手動チェック)で見つけたゲームのウィンドウ。見つからなければnull。
     /// 通知を出すモニタ・仮想デスクトップを決める時に、UIスレッドで毎回プロセスを列挙し直さずに済むよう、
     /// 判定のたびに探しているこの結果を使い回す。
     /// </summary>
@@ -176,6 +169,12 @@ public sealed class RecruitmentMonitorService : IDisposable
         return RecruitmentAnalyzer.SelectForDisplay(_analyzer.Evaluate(tags, _operators, band), band);
     }
 
+    /// <summary>
+    /// キャプチャ→OCR→タグ照合→組み合わせ判定を1回分実行し、途中経過も含めた結果を返す。
+    /// トレイメニュー「手動チェック実行」から呼ばれる。常時監視のポーリングとは<see cref="_checkGate"/>で
+    /// 直列化しているため、両者が同時に発生しても<see cref="_captureService"/>の内部状態が競合することはない。
+    /// </summary>
+    /// <returns>ゲームウィンドウが見つからない、またはフレームを取得できなかった場合はnull。</returns>
     public async Task<RecruitmentCheckResult?> CheckOnceAsync()
     {
         await _checkGate.WaitAsync();
@@ -273,8 +272,8 @@ public sealed class RecruitmentMonitorService : IDisposable
 
     private async Task TickAsync()
     {
-        // 前回分のチェックがまだ実行中なら、キューイングして積み上げるのではずスキップする
-        // (どのみち直後にまた1秒後のティックが来るため、待ち行列を作る意味が薄い)。
+        // 前回分のチェックがまだ実行中なら、キューイングして積み上げるのではなくスキップする
+        // (どのみち直後に次のティック(PollInterval後)が来るため、待ち行列を作る意味が薄い)。
         if (!await _checkGate.WaitAsync(0))
         {
             return;
@@ -307,7 +306,7 @@ public sealed class RecruitmentMonitorService : IDisposable
 
             _isOnRecruitmentScreen = true;
 
-            // Avoid re-notifying for the same tag set every poll cycle.
+            // 同じタグの組み合わせ・同じ区間なら、ポーリングのたびに通知し直さない。
             if (_lastVisibleTags is not null && _lastVisibleBand == band && _lastVisibleTags.SequenceEqual(result!.MatchedTags))
             {
                 return;
@@ -344,8 +343,8 @@ public sealed class RecruitmentMonitorService : IDisposable
         }
         catch
         {
-            // A single failed capture/OCR cycle (e.g. window minimized, game not on the
-            // recruitment screen) should not crash the background monitor - just skip this tick.
+            // キャプチャ・OCRが1回失敗しただけ(ウィンドウの最小化など)で常時監視全体を止めないよう、
+            // このティックだけ読み飛ばす。
         }
         finally
         {

@@ -352,8 +352,8 @@ public partial class NotificationWindow : Window
             DetectedTagsText.Inlines.Add(new Run(lines[i].Text) { Foreground = lines[i].Brush });
         }
 
-        // 選択中の募集時間の区間では通知されない高レアの組み合わせが、通常の区間(7:40〜9:00)なら
-        // 出る場合に知らせる(Issue #34)。手動選択の注記より下の専用の行に表示する。
+        // 選択中の募集時間の区間では表示されない組み合わせが、より長い区間なら★4以上確定になる場合に
+        // 知らせる(Issue #34、RecruitmentAnalyzer.FindRarityGainInLongerBand)。手動選択の注記より下の専用の行に表示する。
         var hint = tags.Count > 0 ? BandHintProvider?.Invoke(tags, _selectedBand) : null;
         ApplyBandAccent(hint is not null);
         if (hint is { } gain)
@@ -401,7 +401,7 @@ public partial class NotificationWindow : Window
     /// <summary>
     /// 通知を、ゲームのウィンドウがあるモニタの隅・仮想デスクトップへ寄せる。通知を出すたびに呼ぶので、
     /// ゲームを別のモニタ・デスクトップへ動かしても次の通知から追従する。ゲームのウィンドウが
-    /// 見つからない、または取得に失敗した場合は、プライマリモニタに出す(デスクトップは動かさない)。
+    /// 見つからない、または取得に失敗した場合は、プライマリモニタの、いま操作中のデスクトップに出す。
     /// </summary>
     private void FollowGameWindow()
     {
@@ -549,7 +549,7 @@ public partial class NotificationWindow : Window
     private static readonly SolidColorBrush DetectedTagsNormalBrush = Freeze(0xFF, 0xB0, 0xBE, 0xC5);
     private static readonly SolidColorBrush DetectedTagsWarningBrush = Freeze(0xFF, 0xFF, 0x52, 0x52);
 
-    // 想定する募集時間の区間セレクタの強調色(通常の区間=アクセント色、それ以外=黄色)と、
+    // 想定する募集時間の区間セレクタの強調色(通常=アクセント色、募集時間の警告が出ている間=黄色)と、
     // 募集時間に関する警告の文字色(黄色)。
     private static readonly SolidColorBrush BandAccentBrush = Freeze(0xFF, 0x4F, 0xC3, 0xF7);
     private static readonly SolidColorBrush BandWarningBrush = Freeze(0xFF, 0xFF, 0xC1, 0x07);
