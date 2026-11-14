@@ -24,6 +24,9 @@ public partial class NotificationWindow : Window
     // 名前の列挙はここまでにして残りは「他N名」とまとめる。
     private const int MaxOperatorNamesShown = 6;
 
+    // 通常(自動検出・手動補正)の通知のタイトル。手動チェックの結果だけは別のタイトルにする。
+    private const string DefaultTitle = "おすすめタグ一覧";
+
     // ゲーム側の仕様上、募集条件のタグ枠は最大5個表示される(RecruitmentMonitorService.
     // MaxTagsOnRecruitmentScreen参照)。検出数がこれ未満の場合は、OCRが1個以上見落として
     // いることが確実なので、気づきやすいよう警告表示にする。
@@ -239,7 +242,7 @@ public partial class NotificationWindow : Window
         }
 
         _isDebugResultShown = false;
-        TitleText.Text = "おすすめタグ一覧";
+        TitleText.Text = DefaultTitle;
         _displayedTags = matchedTags;
         UpdateDetectedTagsText(matchedTags, isManual: false);
         RenderResults(results);
@@ -286,7 +289,7 @@ public partial class NotificationWindow : Window
         _isManualMode = true;
         _isDebugResultShown = false;
         _displayedTags = selectedTags;
-        TitleText.Text = "おすすめタグ一覧";
+        TitleText.Text = DefaultTitle;
         UpdateDetectedTagsText(selectedTags, isManual: true);
         RenderResults(results);
         ManualModeNotice.Visibility = Visibility.Visible;
@@ -302,7 +305,7 @@ public partial class NotificationWindow : Window
     private void RefreshButton_Click(object sender, RoutedEventArgs e)
     {
         ExitManualMode();
-        TitleText.Text = "おすすめタグ一覧";
+        TitleText.Text = DefaultTitle;
         _displayedTags = _lastAutoMatchedTags;
         UpdateDetectedTagsText(_lastAutoMatchedTags, isManual: false);
         RenderResults(_lastAutoResults);
@@ -492,7 +495,7 @@ public partial class NotificationWindow : Window
         var overflowCount = sortedOperators.Count - MaxOperatorNamesShown;
         if (overflowCount > 0)
         {
-            chips.Add(new OperatorChip($"他{overflowCount}名", FallbackTintBrush));
+            chips.Add(new OperatorChip($"他{overflowCount}名", FallbackRarityBrushes.Tint));
         }
 
         // チップが省略されている場合に限らず、常に全対象者をホバーで確認できるようにする
@@ -537,12 +540,21 @@ public partial class NotificationWindow : Window
     // アークナイツ本編のレアリティ配色に合わせた色(★1は白〜灰、★2は黄緑、★3は青、★4は紫、★5は黄、★6はオレンジ)。
     // 通常の運用(7:40〜9:00)では★4以上しか表示しないが、短い区間では★1〜★3も表示するため、
     // ★1(灰色)はフォールバックと同じ色にしている。
-    private static readonly SolidColorBrush Rarity6Brush = Freeze(0xFF, 0xFF, 0x9A, 0x2E);
-    private static readonly SolidColorBrush Rarity5Brush = Freeze(0xFF, 0xFF, 0xD5, 0x4F);
-    private static readonly SolidColorBrush Rarity4Brush = Freeze(0xFF, 0xC0, 0x92, 0xFF);
-    private static readonly SolidColorBrush Rarity3Brush = Freeze(0xFF, 0x4D, 0xA6, 0xFF);
-    private static readonly SolidColorBrush Rarity2Brush = Freeze(0xFF, 0x9C, 0xD6, 0x4A);
-    private static readonly SolidColorBrush FallbackRarityBrush = Freeze(0xFF, 0x9E, 0x9E, 0x9E);
+    // 文字・枠線用の不透明な色と、オペレーターチップ用の薄い塗り(TintAlpha)を、同じRGBから作る。
+    // チップ側を枠線にするとカード全体の枠線と同じ見た目で紛らわしい(ユーザー指摘)ため、ごく薄い
+    // 塗りつぶしにして視覚的な階層を分けている。
+    private const byte TintAlpha = 0x30;
+    private static readonly IReadOnlyDictionary<int, (SolidColorBrush Solid, SolidColorBrush Tint)> RarityBrushes =
+        new Dictionary<int, (SolidColorBrush, SolidColorBrush)>
+        {
+            [6] = RarityBrushPair(0xFF, 0x9A, 0x2E),
+            [5] = RarityBrushPair(0xFF, 0xD5, 0x4F),
+            [4] = RarityBrushPair(0xC0, 0x92, 0xFF),
+            [3] = RarityBrushPair(0x4D, 0xA6, 0xFF),
+            [2] = RarityBrushPair(0x9C, 0xD6, 0x4A),
+        };
+
+    private static readonly (SolidColorBrush Solid, SolidColorBrush Tint) FallbackRarityBrushes = RarityBrushPair(0x9E, 0x9E, 0x9E);
 
     // 検出タグ一覧の文字色。既存のレアリティ配色(オレンジ/黄/紫)と紛れないよう、警告色には
     // 赤系を使う。
@@ -554,16 +566,6 @@ public partial class NotificationWindow : Window
     private static readonly SolidColorBrush BandAccentBrush = Freeze(0xFF, 0x4F, 0xC3, 0xF7);
     private static readonly SolidColorBrush BandWarningBrush = Freeze(0xFF, 0xFF, 0xC1, 0x07);
 
-    // オペレーターチップ用の低不透明度版。枠線だとカード全体の枠線と同じ見た目で紛らわしい
-    // (ユーザー指摘)ため、チップ側はごく薄い塗りつぶしにして視覚的な階層を分けている。
-    private const byte TintAlpha = 0x30;
-    private static readonly SolidColorBrush Rarity6TintBrush = Freeze(TintAlpha, 0xFF, 0x9A, 0x2E);
-    private static readonly SolidColorBrush Rarity5TintBrush = Freeze(TintAlpha, 0xFF, 0xD5, 0x4F);
-    private static readonly SolidColorBrush Rarity4TintBrush = Freeze(TintAlpha, 0xC0, 0x92, 0xFF);
-    private static readonly SolidColorBrush Rarity3TintBrush = Freeze(TintAlpha, 0x4D, 0xA6, 0xFF);
-    private static readonly SolidColorBrush Rarity2TintBrush = Freeze(TintAlpha, 0x9C, 0xD6, 0x4A);
-    private static readonly SolidColorBrush FallbackTintBrush = Freeze(TintAlpha, 0x9E, 0x9E, 0x9E);
-
     private static SolidColorBrush Freeze(byte a, byte r, byte g, byte b)
     {
         var brush = new SolidColorBrush(Color.FromArgb(a, r, g, b));
@@ -571,25 +573,15 @@ public partial class NotificationWindow : Window
         return brush;
     }
 
-    private static SolidColorBrush RarityBrush(int? rarity) => rarity switch
-    {
-        6 => Rarity6Brush,
-        5 => Rarity5Brush,
-        4 => Rarity4Brush,
-        3 => Rarity3Brush,
-        2 => Rarity2Brush,
-        _ => FallbackRarityBrush,
-    };
+    private static (SolidColorBrush Solid, SolidColorBrush Tint) RarityBrushPair(byte r, byte g, byte b) =>
+        (Freeze(0xFF, r, g, b), Freeze(TintAlpha, r, g, b));
 
-    private static SolidColorBrush TintBrush(int? rarity) => rarity switch
-    {
-        6 => Rarity6TintBrush,
-        5 => Rarity5TintBrush,
-        4 => Rarity4TintBrush,
-        3 => Rarity3TintBrush,
-        2 => Rarity2TintBrush,
-        _ => FallbackTintBrush,
-    };
+    private static (SolidColorBrush Solid, SolidColorBrush Tint) RarityBrushesFor(int? rarity) =>
+        rarity is { } value && RarityBrushes.TryGetValue(value, out var brushes) ? brushes : FallbackRarityBrushes;
+
+    private static SolidColorBrush RarityBrush(int? rarity) => RarityBrushesFor(rarity).Solid;
+
+    private static SolidColorBrush TintBrush(int? rarity) => RarityBrushesFor(rarity).Tint;
 
     private void CloseButton_Click(object sender, RoutedEventArgs e) => HideNotification();
 
