@@ -318,28 +318,20 @@ public sealed class RecruitmentMonitorService : IDisposable
             // おすすめが無くなった後もその古い通知が消えずに残ってしまう(実際に発生していた不具合)。
             var goodCombinations = RecruitmentAnalyzer.SelectForDisplay(result!.Combinations, band);
 
-            if (goodCombinations.Count > 0)
+            // 「おすすめ有り」は即座に通知する。「おすすめ無し」は即確定させず、同じタグの組み合わせが
+            // もう1ティック続いたことを確認してから確定する(上のフィールド宣言のコメント参照)。
+            var isConfirmed = goodCombinations.Count > 0
+                || (_pendingNoRecommendationTags is not null && _pendingNoRecommendationTags.SequenceEqual(result.MatchedTags));
+            if (!isConfirmed)
             {
-                _lastVisibleTags = result.MatchedTags;
-                _lastVisibleBand = band;
-                _pendingNoRecommendationTags = null;
-                RecommendationsUpdated?.Invoke(result.MatchedTags, goodCombinations);
+                _pendingNoRecommendationTags = result.MatchedTags;
                 return;
             }
 
-            // 「おすすめ無し」は即確定させず、同じタグの組み合わせがもう1ティック続いた
-            // ことを確認してから確定する(上のフィールド宣言のコメント参照)。
-            if (_pendingNoRecommendationTags is not null && _pendingNoRecommendationTags.SequenceEqual(result.MatchedTags))
-            {
-                _lastVisibleTags = result.MatchedTags;
-                _lastVisibleBand = band;
-                _pendingNoRecommendationTags = null;
-                RecommendationsUpdated?.Invoke(result.MatchedTags, goodCombinations);
-            }
-            else
-            {
-                _pendingNoRecommendationTags = result.MatchedTags;
-            }
+            _lastVisibleTags = result.MatchedTags;
+            _lastVisibleBand = band;
+            _pendingNoRecommendationTags = null;
+            RecommendationsUpdated?.Invoke(result.MatchedTags, goodCombinations);
         }
         catch
         {
