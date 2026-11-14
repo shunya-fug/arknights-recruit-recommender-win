@@ -225,9 +225,18 @@ CN/JP/EN等リージョンをまたいで共通であることを確認済みな
 dotnet run --project tools/ArknightsDataGenerator -- --output src/ArknightsRecruitRecommender/Data/operators.ja-JP.json
 ```
 
-GitHub Actions (`.github/workflows/update-operator-data.yml`) が毎日9:00(JST)に自動実行し、
-差分があればPRを作成する（直接コミットはしない。境界ケース、たとえば新規オペレーターが
-`character_table.json`にまだ反映されていないタイミングでの実行等を人が確認できるようにするため）。
+GitHub Actions (`.github/workflows/update-operator-data.yml`) が毎日9:00(JST)に、公開済みの
+`main`を元に自動実行する。差分の扱いは次のとおり。
+
+- **オペレーターの追加だけで、新しいデータでアプリ本体のテストも通った場合**: `main`へ直接コミットし、
+  最新タグのパッチ番号を1つ上げたタグを打って`release.yml`を呼び出し、リリースまで自動で行う。
+  リリースしたコミットは`develop`にも取り込む（競合した場合などは`develop`へのPRを作成する）。
+  リリースの呼び出しに失敗してタグだけが残った場合は、次回の実行時に呼び直す。
+- **既存オペレーターの削除・変更がある、またはテストが失敗した場合**: 自動リリースせず、`main`向けの
+  PRを作成して止める（公開求人から外れることは稀で、データ取得側の不具合の可能性が高いため、人が
+  確認する）。
+
+`develop`ではなく`main`を元にするのは、`develop`の作業中の変更をデータ更新と一緒に公開しないため。
 `workflow_dispatch`にも対応しているため、GitHub Actions画面から手動実行も可能。
 
 ### ビルド・実行

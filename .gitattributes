@@ -1,0 +1,3 @@
+# オペレーターデータはLFで管理する。Windows上で生成すると改行がCRLFになるため、自動更新ワークフローの
+# コミットが、ランナー側のcore.autocrlf設定に関係なくLFのまま保たれるよう固定している。
+src/ArknightsRecruitRecommender/Data/*.json text eol=lf

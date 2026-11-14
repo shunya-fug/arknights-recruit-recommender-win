@@ -25,3 +25,7 @@ jobs:
 
       - name: Test
         run: dotnet test --no-build --configuration Release
+
+      # オペレーターデータの自動更新で、自動リリースしてよいかを決める比較スクリプトのテスト。
+      - name: Test workflow scripts
+        run: node --test .github/scripts/compare-operators.test.mjs
